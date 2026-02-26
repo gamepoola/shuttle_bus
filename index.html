@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Laya shuttle bus</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAT4AAACfCAMAAABX0UX9AAAAclBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////14gGCAAAAJXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyB2XW8AAAGbSURBVHja7dpxcoMgEIXhR4mO9v9f2J2o1hYpQGmQK4x8uM0T9qkLZz0mI7bqZQAAAAAAAAAAAAAAAAAAAAAAAKBqvHcQqY8e1b7FQJv0wG9w7b8z8cG6YvVn7Q2E0cZ+Xb5Wm8mCk0dSxC6r3q1g7uQ3yZPqgZp9lK9H3qf0gCwYk8n3lQmV8hQ+1Qp9k6q2yqg8y8y6R0mQ4wGQYd9qkK1r3Q8e6uGm0B7qfQ7Jm2p5FzWbJc0jzU4YbqQy3hVg5a0m0j5yqS3qfZc9eX9V7nJ0lZ3Vf5c3z1pY3qXKc0g8m8y2fQxY6b0l9u7S8bT0pQk6c3bZrF9m2uZrYbWJ7g8m0o7cV7cQf8OZ8e6m7KZQw9eQdYc3fQ9Qf9m9V7sV1w0aY2Z1W1qkqg7r6F0mJ0m9o8c3m7f7mO2pG2mXx0r7qvZQAAAAAAAAAAAAAAAAAAAAAAAPw2vQG0mQX9h6FhAAAAAElFTkSuQmCC">
   <style>
     :root{
       --bg1:#07121f; --bg2:#0b1a2a;
@@ -16,6 +17,7 @@
       --line: rgba(131,106,69,.22);
       --yellow:#f2c94c;
     }
+
     *{ box-sizing:border-box; }
     body{
       margin:0;
@@ -27,6 +29,7 @@
         linear-gradient(180deg, var(--bg1), var(--bg2));
       min-height:100vh;
     }
+
     header{
       position: sticky; top: 0;
       backdrop-filter: blur(10px);
@@ -34,6 +37,7 @@
       border-bottom: 1px solid var(--line);
       z-index: 10;
     }
+
     .wrap{ max-width: 1120px; margin: 0 auto; padding: 18px; }
 
     .brand{ display:flex; align-items:center; justify-content:space-between; gap: 12px; padding: 14px 18px; }
@@ -52,6 +56,7 @@
       font-size: 18px;
       flex: 0 0 auto;
     }
+
     h1{ margin:0; font-size: 20px; letter-spacing: .6px; }
     .sub{ margin:2px 0 0 0; color: var(--muted); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70vw; }
 
@@ -78,14 +83,17 @@
       box-shadow: var(--shadow);
       overflow:hidden;
     }
+
     .card-h{
       padding: 16px 16px 12px 16px;
       border-bottom: 1px solid rgba(131,106,69,.16);
       display:flex; align-items:flex-end; justify-content:space-between; gap: 12px;
       flex-wrap:wrap;
     }
+
     .card-h h2{ margin:0; font-size: 17px; letter-spacing:.4px; }
     .card-h .hint{ margin:4px 0 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
     .card-b{ padding: 14px 16px 16px 16px; }
 
     .grid{ display:grid; grid-template-columns: 1fr; gap: 12px; }
@@ -115,8 +123,6 @@
       color: var(--muted); font-size: 13.5px; font-weight: 650;
     }
     .dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
-    .dot.ok{ background: var(--ok); box-shadow: 0 0 0 4px rgba(34,197,94,.16); }
-    .dot.bad{ background: var(--danger); box-shadow: 0 0 0 4px rgba(255,90,95,.14); }
 
     .btn{
       appearance:none; border: 1px solid rgba(131,106,69,.35);
@@ -137,17 +143,15 @@
     .btn:active{ transform: translateY(1px); }
     .btn:disabled{ opacity: .55; cursor:not-allowed; transform:none; }
 
-    /* Keep old style for “ปิดแล้ว” */
     .btn.primary{ background: linear-gradient(135deg, rgba(131,106,69,.22), rgba(131,106,69,.12)); border-color: rgba(131,106,69,.55); color: var(--text); }
-
-    /* Yellow for “เลือก” */
+    /* ✅ Yellow for “เลือก” button on schedule */
     .btn.pick{
       background: linear-gradient(135deg, rgba(242,201,76,.95), rgba(242,201,76,.60));
       border-color: rgba(242,201,76,.85);
       color: #0b1a2a;
     }
     .btn.pick:hover{
-      background: linear-gradient(135deg, rgba(242,201,76,1), rgba(242,201,76,.72));
+      background: linear-gradient(135deg, rgba(242,201,76,1), rgba(242,201,76,.70));
       border-color: rgba(242,201,76,1);
     }
 
@@ -171,6 +175,16 @@
     select{ cursor:pointer; }
     input:focus, select:focus{ border-color: rgba(131,106,69,.55); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
 
+    .kpi{
+      display:flex; flex-direction:column; gap: 8px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(131,106,69,.18);
+      background: rgba(7,18,31,.35);
+    }
+    .kpi .big{ font-size: 30px; font-weight: 950; letter-spacing:.2px; color: var(--gold2); }
+    .kpi .small{ color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+
     .mini{
       margin-top: 10px;
       border-top: 1px solid rgba(131,106,69,.16);
@@ -179,12 +193,22 @@
       font-size: 13.5px;
       line-height: 1.65;
     }
+
     .divider{ height:1px; background: rgba(131,106,69,.16); margin: 12px 0; }
 
     table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 18px; border: 1px solid rgba(131,106,69,.18); background: rgba(7,18,31,.25); }
     th, td{ padding: 11px 11px; font-size: 13px; border-bottom: 1px solid rgba(131,106,69,.14); text-align:left; }
     th{ color: var(--muted); font-weight: 800; }
     tr:last-child td{ border-bottom:none; }
+
+    .barwrap{ display:grid; gap: 8px; }
+    .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(7,18,31,.25); }
+    .bar .lbl{ width: 66px; color: var(--muted); font-size: 13.5px; font-weight: 700; }
+    .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.10); overflow:hidden; }
+    .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.60), rgba(176,163,144,.22)); }
+    .bar .num{ width: 62px; text-align:right; color: var(--gold2); font-weight: 900; font-size: 13.5px; }
+
+    .footer-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
 
     .toast{
       position: fixed;
@@ -218,7 +242,6 @@
     }
 
     .danger-text{ color: #ffb0b3; }
-    .ok-text{ color: #a8f0b8; }
   </style>
 </head>
 <body>
@@ -228,7 +251,7 @@
         <div class="mark">L</div>
         <div style="min-width:0">
           <h1>Laya shuttle bus</h1>
-          <p class="sub" id="subtitle">กำลังเริ่มระบบ…</p>
+          <p class="sub" id="statusLine">กำลังเชื่อมต่อ Firebase…</p>
         </div>
       </div>
       <nav class="nav" id="nav"></nav>
@@ -242,56 +265,163 @@
     <div class="d" id="toastDesc"></div>
   </div>
 
-  <script type="module">
-    // ============================
-    // FIREBASE SETUP (กรอกค่าจาก Firebase Console > Project settings > Your apps)
-    // ============================
-        const firebaseConfig = {
-          apiKey: "AIzaSyCql94D9FWgX4VIT5N1URKQDZ6IIyFGXys",
-          authDomain: "shuttle-bus-dd8e0.firebaseapp.com",
-          projectId: "shuttle-bus-dd8e0",
-          storageBucket: "shuttle-bus-dd8e0.firebasestorage.app",
-          messagingSenderId: "1097750801622",
-          appId: "1:1097750801622:web:7ed78fca83999be34ced77",
-          measurementId: "G-WTJP6RW7R8",
-        };
 
-    const FIREBASE_VERSION = "10.12.5"; // ใช้เป็นค่าอ้างอิงในคู่มือเท่านั้น (import ด้านล่างถูก fix ไว้)
-    const FIREBASE_ENABLED = firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
+  <!-- Firebase (Compat) - works on GitHub Pages without build tools -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 
-    // ============================
-    // Imports (Firebase Modular SDK)
-    // ============================
-    let firebase = null;
-    let db = null;
-    let auth = null;
-    let serverTimestamp = null;
-    let runTransaction = null;
-    let doc = null;
-    let getDoc = null;
-    let setDoc = null;
-    let collection = null;
-    let addDoc = null;
-    let getDocs = null;
-    let query = null;
-    let where = null;
-    let limit = null;
-    let onSnapshot = null;
-    let signInAnonymously = null;
-
-    // ============================
-    // APP CONFIG
-    // ============================
+  <script>
     const CAPACITY_PER_TRIP = 20;
 
-    // LocalStorage fallback keys
-    const LS_STATE = "laya_bus_state_v_firebase";
-    const LS_LOGS  = "laya_bus_logs_v_firebase";
-    const LS_UI    = "laya_bus_ui_v_firebase";
+    const LS_STATE = "laya_shuttle_state_v4";
+    const LS_LOGS  = "laya_shuttle_logs_v4";
+    const LS_UI    = "laya_shuttle_ui_v4";
 
-    // Firestore paths
-    const FS_STATE_COL = "shuttle_state";
-    const FS_LOGS_COL  = "shuttle_logs";
+    // ============================
+    // FIREBASE (Firestore + Anonymous Auth)
+    // ============================
+    // เปิด/ปิดการใช้ Firebase
+    const USE_FIREBASE = true;
+
+    // ✅ Firebase config (จาก Firebase Console ของคุณ)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCql94D9FWgX4VIT5N1URKQDZ6IIyFGXys",
+      authDomain: "shuttle-bus-dd8e0.firebaseapp.com",
+      projectId: "shuttle-bus-dd8e0",
+      storageBucket: "shuttle-bus-dd8e0.firebasestorage.app",
+      messagingSenderId: "1097750801622",
+      appId: "1:1097750801622:web:7ed78fca83999be34ced77",
+      measurementId: "G-WTJP6RW7R8"
+    };
+
+    const FB = {
+      enabled: USE_FIREBASE,
+      ready: false,
+      app: null,
+      db: null,
+      uid: null,
+      stateUnsub: null,
+      logsUnsub: null,
+    };
+
+    let STATE_CACHE = null;
+    let LOGS_CACHE = [];
+
+    let _fbStateReadyResolve;
+    let _fbLogsReadyResolve;
+    const fbStateReady = new Promise((res) => (_fbStateReadyResolve = res));
+    const fbLogsReady  = new Promise((res) => (_fbLogsReadyResolve  = res));
+
+    function setStatusLine(text){
+      const el = document.getElementById("statusLine");
+      if(el) el.textContent = text;
+    }
+
+    function stateDocRef(date){ return FB.db.collection("shuttle_state").doc(date); }
+    function logsColRef(){ return FB.db.collection("shuttle_logs"); }
+
+    function normalizeState(data){
+      const base = buildDefaultState();
+      if(!data || typeof data !== "object") return base;
+      if(data.date !== base.date) return base;
+
+      const merged = { ...base, ...data, slots: { ...base.slots, ...(data.slots || {}) } };
+      for(const id of Object.keys(base.slots)){
+        const s = merged.slots[id];
+        if(!s || typeof s.available !== "number") merged.slots[id] = base.slots[id];
+        if(!merged.slots[id].bookings) merged.slots[id].bookings = {};
+        if(!merged.slots[id].capacity) merged.slots[id].capacity = CAPACITY_PER_TRIP;
+        merged.slots[id].available = Math.max(0, Math.min(merged.slots[id].capacity, merged.slots[id].available));
+      }
+      return merged;
+    }
+
+    async function initFirebase(){
+      if(!FB.enabled){
+        setStatusLine("โหมด Local (ไม่ใช้ Firebase)");
+        return false;
+      }
+      if(typeof firebase === "undefined"){
+        setStatusLine("Firebase SDK ไม่โหลด (ใช้ Local แทน)");
+        FB.enabled = false;
+        return false;
+      }
+
+      try{
+        FB.app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
+        FB.db = firebase.firestore();
+
+        await firebase.auth().signInAnonymously();
+        FB.uid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
+
+        FB.ready = true;
+        setStatusLine("Firebase: เชื่อมต่อแล้ว");
+
+        attachFirebaseListeners();
+        return true;
+      }catch(err){
+        console.error("Firebase init failed", err);
+        setStatusLine("เชื่อม Firebase ไม่ได้ (ใช้ Local แทน)");
+        FB.enabled = false;
+        FB.ready = false;
+        return false;
+      }
+    }
+
+    function attachFirebaseListeners(){
+      if(!FB.ready) return;
+
+      // unsubscribe old listeners
+      try{ if(FB.stateUnsub) FB.stateUnsub(); }catch{}
+      try{ if(FB.logsUnsub) FB.logsUnsub(); }catch{}
+
+      const date = todayKey();
+      const ref = stateDocRef(date);
+
+      // State snapshot
+      let firstState = true;
+      FB.stateUnsub = ref.onSnapshot(async (snap) => {
+        if(!snap.exists){
+          const base = buildDefaultState();
+          try{ await ref.set(base, { merge: false }); }catch(e){ console.error("Create state doc failed", e); }
+          STATE_CACHE = base;
+        }else{
+          STATE_CACHE = normalizeState(snap.data());
+        }
+
+        if(firstState){
+          firstState = false;
+          if(_fbStateReadyResolve) _fbStateReadyResolve(true);
+        }
+
+        // update UI
+        render();
+      }, (err)=>{
+        console.error("State snapshot error", err);
+        setStatusLine("Firebase state error (ใช้ Local แทน)");
+        FB.enabled = false;
+        FB.ready = false;
+      });
+
+      // Logs snapshot (recent only) for stats/UI
+      let firstLogs = true;
+      FB.logsUnsub = logsColRef().orderBy("tsMs","desc").limit(3000).onSnapshot((qs) => {
+        const arr = [];
+        qs.forEach((doc) => arr.push(doc.data()));
+        LOGS_CACHE = arr;
+
+        if(firstLogs){
+          firstLogs = false;
+          if(_fbLogsReadyResolve) _fbLogsReadyResolve(true);
+        }
+
+        const { path } = parseHash();
+        if(path === "/logs" || path === "/") render();
+      }, (err)=>{
+        console.error("Logs snapshot error", err);
+      });
+    }
 
     const DIRS = {
       out: {
@@ -299,88 +429,89 @@
         label: "ขาไป",
         baseTimes: ["11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"],
         timeline: [
-          { key:"HOTEL",  name:"Hotel",              offset: 0 },
-          { key:"LAYAN",  name:"Layan National Park",offset: 5 },
-          { key:"LEPHANG",name:"Le Phang Beach",     offset: 10 },
-          { key:"BOAT",   name:"Boat Avenue",        offset: 20 },
+          { key:"HOTEL", name:"Hotel", offset: 0 },
+          { key:"LAYAN", name:"Layan National Park", offset: 5 },
+          { key:"LEPHANG", name:"Le Phang Beach", offset: 10 },
+          { key:"BOAT", name:"Boat Avenue", offset: 20 },
         ],
         selectLabel: "จุดหมายปลายทาง",
         selectable: [
-          { key:"LAYAN",  name:"Layan National Park" },
-          { key:"LEPHANG",name:"Le Phang Beach" },
-          { key:"BOAT",   name:"Boat Avenue" },
-        ]
+          { key:"LAYAN", name:"Layan National Park" },
+          { key:"LEPHANG", name:"Le Phang Beach" },
+          { key:"BOAT", name:"Boat Avenue" },
+        ],
       },
       back: {
         key: "back",
         label: "ขากลับ",
         baseTimes: ["11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30"],
         timeline: [
-          { key:"BOAT",   name:"Boat Avenue",        offset: 0 },
-          { key:"LEPHANG",name:"Le Phang Beach",     offset: 10 },
-          { key:"LAYAN",  name:"Layan National Park",offset: 15 },
-          { key:"HOTEL",  name:"Hotel",              offset: 20 },
+          { key:"BOAT", name:"Boat Avenue", offset: 0 },
+          { key:"LEPHANG", name:"Le Phang Beach", offset: 10 },
+          { key:"LAYAN", name:"Layan National Park", offset: 15 },
+          { key:"HOTEL", name:"Hotel", offset: 20 },
         ],
         selectLabel: "จุดรับขึ้นรถ",
         selectable: [
-          { key:"BOAT",   name:"Boat Avenue" },
-          { key:"LEPHANG",name:"Le Phang Beach" },
-          { key:"LAYAN",  name:"Layan National Park" },
-        ]
+          { key:"BOAT", name:"Boat Avenue" },
+          { key:"LEPHANG", name:"Le Phang Beach" },
+          { key:"LAYAN", name:"Layan National Park" },
+        ],
       }
     };
 
-    // ============================
-    // Helpers
-    // ============================
-    const $ = (id) => document.getElementById(id);
     const pad2 = (n) => String(n).padStart(2, "0");
-    const timeToMin = (t) => {
+    function timeToMin(t){
       const [h,m] = String(t).split(":").map(Number);
-      return (h*60) + (m||0);
-    };
-    const minToTime = (min) => {
-      const total = ((min % (24*60)) + (24*60)) % (24*60);
-      const h = Math.floor(total/60);
-      const m = total%60;
-      return `${pad2(h)}:${pad2(m)}`;
-    };
-    const addMin = (t, d) => minToTime(timeToMin(t) + d);
-    const nowMin = () => {
-      const d = new Date();
-      return d.getHours()*60 + d.getMinutes();
-    };
-    const todayKey = () => {
+      return (h*60) + m;
+    }
+    function minToTime(min){
+      const m = ((min % (24*60)) + (24*60)) % (24*60);
+      const h = Math.floor(m/60);
+      const mm = m%60;
+      return `${pad2(h)}:${pad2(mm)}`;
+    }
+    function addMin(t, delta){ return minToTime(timeToMin(t) + delta); }
+
+    function todayKey(){
       const d = new Date();
       return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    };
-    const currentMonthKey = () => {
+    }
+    function currentMonthKey(){
       const d = new Date();
       return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-    };
-    const isClosed = (baseTime) => nowMin() >= timeToMin(baseTime);
-    const esc = (s) => String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
+    }
+    function nowMin(){
+      const d = new Date();
+      return d.getHours()*60 + d.getMinutes();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
 
     function toast(title, desc=""){
-      $("toastTitle").textContent = title;
-      $("toastDesc").textContent = desc;
-      const el = $("toast");
+      const el = document.getElementById("toast");
+      document.getElementById("toastTitle").textContent = title;
+      document.getElementById("toastDesc").textContent = desc;
       el.classList.add("show");
       clearTimeout(toast._t);
-      toast._t = setTimeout(()=>el.classList.remove("show"), 2600);
+      toast._t = setTimeout(() => el.classList.remove("show"), 2600);
     }
 
     function parseHash(){
-      const raw = (location.hash || "#/").replace(/^#/, "");
-      const [path, qs=""] = raw.split("?");
-      return { path: path || "/", params: new URLSearchParams(qs) };
+      const raw = location.hash || "#/";
+      const parts = raw.replace(/^#/, "").split("?");
+      const path = parts[0];
+      const params = new URLSearchParams(parts[1] || "");
+      return { path, params };
     }
-    const setHash = (path) => { location.hash = `#${path}`; };
+    function setHash(path){ location.hash = `#${path}`; }
 
     function downloadBlob(filename, mime, content){
       const blob = new Blob([content], { type: mime });
@@ -391,473 +522,424 @@
       URL.revokeObjectURL(a.href);
     }
 
-    const slotId = (dirKey, baseTime) => `${dirKey}|${baseTime}`;
+    function monthKeyFromISO(iso){
+      try {
+        const d = new Date(iso);
+        if(!Number.isFinite(d.getTime())) return "";
+        return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+      } catch { return ""; }
+    }
 
-    function buildDefaultState(dateKey){
+    function slotId(dirKey, baseTime){ return `${dirKey}|${baseTime}`; }
+
+    function buildDefaultState(){
+      const date = todayKey();
       const slots = {};
-      for (const dk of Object.keys(DIRS)){
-        for (const t of DIRS[dk].baseTimes){
-          const id = slotId(dk, t);
-          slots[id] = { capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+      for(const dirKey of Object.keys(DIRS)){
+        for(const t of DIRS[dirKey].baseTimes){
+          slots[slotId(dirKey, t)] = { capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
         }
       }
-      return { version: 1, date: dateKey, slots };
+      return { version: 4, date, slots };
     }
 
-    function mergeStateWithDefault(dateKey, loaded){
-      const base = buildDefaultState(dateKey);
-      if(!loaded || loaded.date !== dateKey) return base;
-      const merged = { version: 1, date: dateKey, slots: {} };
-      for (const id of Object.keys(base.slots)){
-        const s0 = base.slots[id];
-        const s = (loaded.slots && loaded.slots[id]) ? loaded.slots[id] : s0;
-        const cap = (typeof s.capacity === "number") ? s.capacity : CAPACITY_PER_TRIP;
-        const avail = (typeof s.available === "number") ? s.available : cap;
-        merged.slots[id] = {
-          capacity: cap,
-          available: Math.max(0, Math.min(cap, avail)),
-          bookings: (s.bookings && typeof s.bookings === "object") ? s.bookings : {}
+    function loadState(){
+      // Firebase mode
+      if(FB.ready && STATE_CACHE){
+        return STATE_CACHE;
+      }
+
+      // Local fallback
+      try {
+        const raw = localStorage.getItem(LS_STATE);
+        const base = buildDefaultState();
+        if(!raw) return base;
+        const parsed = JSON.parse(raw);
+
+        // reset seats daily, but keep logs
+        if(!parsed || parsed.date !== base.date) return base;
+
+        const merged = { ...base, ...parsed, slots: { ...base.slots, ...(parsed.slots || {}) } };
+        for(const id of Object.keys(base.slots)){
+          const s = merged.slots[id];
+          if(!s || typeof s.available !== "number") merged.slots[id] = base.slots[id];
+          if(!merged.slots[id].bookings) merged.slots[id].bookings = {};
+          if(!merged.slots[id].capacity) merged.slots[id].capacity = CAPACITY_PER_TRIP;
+          merged.slots[id].available = Math.max(0, Math.min(merged.slots[id].capacity, merged.slots[id].available));
+        }
+        return merged;
+      } catch {
+        return buildDefaultState();
+      }
+    }function saveState(st){
+      // Firebase mode: write daily doc (used for reset etc.)
+      if(FB.ready){
+        const normalized = normalizeState(st);
+        STATE_CACHE = normalized;
+        stateDocRef(normalized.date).set(normalized, { merge: false }).catch((e)=>console.error("saveState firebase failed", e));
+        return;
+      }
+      localStorage.setItem(LS_STATE, JSON.stringify(st));
+    }function loadLogs(){
+      // Firebase mode
+      if(FB.ready){
+        return Array.isArray(LOGS_CACHE) ? LOGS_CACHE : [];
+      }
+
+      // Local fallback
+      try {
+        const raw = localStorage.getItem(LS_LOGS);
+        if(!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
+    }function addLog(entry){
+      // Firebase mode: add to Firestore
+      if(FB.ready){
+        const date = entry.date || todayKey();
+        const payload = {
+          ...entry,
+          date,
+          month: String(date).slice(0,7),
+          tsMs: entry.tsMs || Date.now(),
         };
+        // keep ts as ISO for export readability
+        if(!payload.ts) payload.ts = new Date(payload.tsMs).toISOString();
+        return logsColRef().add(payload).catch((e)=>console.error("addLog firebase failed", e));
       }
-      return merged;
+
+      // Local fallback
+      const logs = loadLogs();
+      logs.unshift(entry);
+      localStorage.setItem(LS_LOGS, JSON.stringify(logs));
+    }function loadUi(){
+      try {
+        const raw = localStorage.getItem(LS_UI);
+        if(!raw) return { dir: "out" };
+        const parsed = JSON.parse(raw);
+        return { dir: (parsed.dir === "back") ? "back" : "out" };
+      } catch { return { dir: "out" }; }
     }
 
-    // ============================
-    // Backend: LocalStorage
-    // ============================
-    const LocalBackend = {
-      mode: "local",
-      async init(){
-        $("subtitle").textContent = "โหมด Local: ข้อมูลที่นั่ง + Log อยู่ในเครื่องนี้ (Export เป็น Excel ได้)";
-        return true;
-      },
-      getUi(){
-        try{
-          const raw = localStorage.getItem(LS_UI);
-          if(!raw) return { dir: "out" };
-          const parsed = JSON.parse(raw);
-          return { dir: (parsed && parsed.dir === "back") ? "back" : "out" };
-        }catch{ return { dir:"out" }; }
-      },
-      setUi(ui){ localStorage.setItem(LS_UI, JSON.stringify(ui)); },
+    function saveUi(ui){ localStorage.setItem(LS_UI, JSON.stringify(ui)); }
 
-      getState(dateKey){
-        try{
-          const raw = localStorage.getItem(LS_STATE);
-          if(!raw) return buildDefaultState(dateKey);
-          const parsed = JSON.parse(raw);
-          return mergeStateWithDefault(dateKey, parsed);
-        }catch{
-          return buildDefaultState(dateKey);
-        }
-      },
-      async resetState(dateKey){
-        const st = buildDefaultState(dateKey);
-        localStorage.setItem(LS_STATE, JSON.stringify(st));
-        return st;
-      },
-      async transactBook(dateKey, sId, room, pax, meta){
-        const st = this.getState(dateKey);
-        const slot = st.slots[sId];
-        if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
-        const existing = slot.bookings?.[room];
-        if(existing && existing.pax > 0) return { ok:false, msg:`ห้องนี้จองแล้ว ${existing.pax} คน (กันการกดซ้ำ)` };
-        if(pax > slot.available) return { ok:false, msg:"ที่นั่งไม่พอสำหรับจำนวนคนที่เลือก" };
-        slot.available -= pax;
-        slot.bookings[room] = { pax, ...meta };
-        localStorage.setItem(LS_STATE, JSON.stringify(st));
-        await this.addLog({
-          tsISO: new Date().toISOString(),
-          date: dateKey,
-          month: dateKey.slice(0,7),
-          action: "BOOK",
-          slotId: sId,
-          ...meta,
-          room, pax
-        });
-        return { ok:true, state: st };
-      },
-      async transactCancel(dateKey, sId, room, pax){
-        const st = this.getState(dateKey);
-        const slot = st.slots[sId];
-        if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
-        const existing = slot.bookings?.[room];
-        const booked = existing ? (existing.pax || 0) : 0;
-        if(booked <= 0) return { ok:false, msg:"เลขห้องนี้ยังไม่มีการจองในรอบนี้" };
-        if(pax > booked) return { ok:false, msg:`ยกเลิกเกินจำนวนที่จองไว้ (จองไว้ ${booked} คน)` };
-        const left = booked - pax;
-        if(left === 0) delete slot.bookings[room];
-        else slot.bookings[room].pax = left;
-        slot.available = Math.min(slot.capacity, slot.available + pax);
-        localStorage.setItem(LS_STATE, JSON.stringify(st));
-        await this.addLog({
-          tsISO: new Date().toISOString(),
-          date: dateKey,
-          month: dateKey.slice(0,7),
-          action: "CANCEL",
-          slotId: sId,
-          dir: existing?.dir || "",
-          roundBase: existing?.roundBase || "",
-          pickup: existing?.pickup || "",
-          destination: existing?.destination || "",
-          pickupTime: existing?.pickupTime || "",
-          arriveTime: existing?.arriveTime || "",
-          placeKey: existing?.placeKey || "",
-          room, pax
-        });
-        return { ok:true, state: st };
-      },
-      loadLogs(){
-        try{
-          const raw = localStorage.getItem(LS_LOGS);
-          if(!raw) return [];
-          const parsed = JSON.parse(raw);
-          return Array.isArray(parsed) ? parsed : [];
-        }catch{ return []; }
-      },
-      async addLog(entry){
-        const logs = this.loadLogs();
-        logs.unshift(entry);
-        localStorage.setItem(LS_LOGS, JSON.stringify(logs));
-      },
-      async fetchLogs({ mode, value }){
-        const logs = this.loadLogs();
-        let filtered = logs;
-        if(mode === "day"){
-          const day = value || todayKey();
-          filtered = logs.filter(e => (e?.date || "") === day);
-        }else if(mode === "month"){
-          const mk = value || currentMonthKey();
-          filtered = logs.filter(e => (e?.month || (e?.date||"").slice(0,7)) === mk);
-        }
-        // sort desc by tsISO
-        filtered.sort((a,b)=> String(b?.tsISO||"").localeCompare(String(a?.tsISO||"")));
-        return filtered;
-      }
-    };
+    function isClosedToday(baseTime){ return nowMin() >= timeToMin(baseTime); }
 
-    // ============================
-    // Backend: Firebase / Firestore
-    // ============================
-    const FirebaseBackend = {
-      mode: "firebase",
-      _stateCache: null,
-      _stateDate: null,
-      _unsubState: null,
-
-      async init(){
-        if(!FIREBASE_ENABLED){
-          $("subtitle").textContent = "โหมด Local: (ยังไม่ได้ตั้งค่า Firebase) • ใส่ firebaseConfig ใน index.html เพื่อใช้ Realtime";
-          return false;
-        }
-
-        // dynamic import (keeps page working even if user doesn't configure firebase)
-        const appMod = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
-        const fsMod  = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
-        const auMod  = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js");
-
-        firebase = appMod;
-        serverTimestamp = fsMod.serverTimestamp;
-        runTransaction = fsMod.runTransaction;
-        doc = fsMod.doc;
-        getDoc = fsMod.getDoc;
-        setDoc = fsMod.setDoc;
-        collection = fsMod.collection;
-        addDoc = fsMod.addDoc;
-        getDocs = fsMod.getDocs;
-        query = fsMod.query;
-        where = fsMod.where;
-        limit = fsMod.limit;
-        onSnapshot = fsMod.onSnapshot;
-
-        signInAnonymously = auMod.signInAnonymously;
-
-        const app = appMod.initializeApp(firebaseConfig);
-        db = fsMod.getFirestore(app);
-        auth = auMod.getAuth(app);
-
-        // Sign-in anonymously (requires enabling Anonymous in Firebase Auth)
-        try{
-          await signInAnonymously(auth);
-        }catch(e){
-          // Most common: unauthorized-domain (need to add github.io domain)
-          console.error(e);
-          $("subtitle").textContent = "Firebase: เข้าสู่ระบบไม่สำเร็จ (เช็ก Authorized domains / เปิด Anonymous Auth)";
-          toast("Firebase Auth Error", e?.message || String(e));
-          return false;
-        }
-
-        $("subtitle").textContent = "โหมด Firebase (Realtime): ที่นั่ง + Log ใช้ร่วมกันทุกเครื่อง (Export เป็น Excel ได้)";
-        return true;
-      },
-
-      getUi(){
-        // store UI choice locally (fine)
-        try{
-          const raw = localStorage.getItem(LS_UI);
-          if(!raw) return { dir: "out" };
-          const parsed = JSON.parse(raw);
-          return { dir: (parsed && parsed.dir === "back") ? "back" : "out" };
-        }catch{ return { dir:"out" }; }
-      },
-      setUi(ui){ localStorage.setItem(LS_UI, JSON.stringify(ui)); },
-
-      async _ensureState(dateKey){
-        const ref = doc(db, FS_STATE_COL, dateKey);
-        const snap = await getDoc(ref);
-        if(!snap.exists()){
-          const base = buildDefaultState(dateKey);
-          await setDoc(ref, base, { merge: false });
-          return base;
-        }
-        return mergeStateWithDefault(dateKey, snap.data());
-      },
-
-      async _listenState(dateKey, onChange){
-        if(this._unsubState){ try{ this._unsubState(); }catch{} this._unsubState = null; }
-        const ref = doc(db, FS_STATE_COL, dateKey);
-        this._unsubState = onSnapshot(ref, (snap)=>{
-          if(!snap.exists()){
-            const base = buildDefaultState(dateKey);
-            this._stateCache = base;
-            this._stateDate = dateKey;
-            onChange?.(base);
-            return;
-          }
-          const st = mergeStateWithDefault(dateKey, snap.data());
-          this._stateCache = st;
-          this._stateDate = dateKey;
-          onChange?.(st);
-        }, (err)=>{
-          console.error(err);
-          toast("Firebase Error", err?.message || String(err));
-        });
-      },
-
-      async getState(dateKey){
-        if(this._stateCache && this._stateDate === dateKey) return this._stateCache;
-        const st = await this._ensureState(dateKey);
-        this._stateCache = st;
-        this._stateDate = dateKey;
-        return st;
-      },
-
-      async resetState(dateKey){
-        const ref = doc(db, FS_STATE_COL, dateKey);
-        const base = buildDefaultState(dateKey);
-        await setDoc(ref, base, { merge:false });
-        this._stateCache = base;
-        this._stateDate = dateKey;
-        return base;
-      },
-
-      async transactBook(dateKey, sId, room, pax, meta){
-        const ref = doc(db, FS_STATE_COL, dateKey);
+    async function bookSeat(slotIdStr, room, pax, meta){
+      // Firebase mode (transaction-safe)
+      if(FB.ready){
+        const date = todayKey();
+        const ref = stateDocRef(date);
+        const tsMs = Date.now();
 
         try{
-          await runTransaction(db, async (tx)=>{
+          await FB.db.runTransaction(async (tx) => {
             const snap = await tx.get(ref);
-            let st = snap.exists() ? snap.data() : buildDefaultState(dateKey);
-            st = mergeStateWithDefault(dateKey, st);
-            const slot = st.slots[sId];
-            if(!slot) throw new Error("NOT_FOUND");
-            const existing = slot.bookings?.[room];
-            if(existing && existing.pax > 0) throw new Error("ALREADY");
-            if(pax > slot.available) throw new Error("NOSEATS");
-            slot.available -= pax;
+            let st = snap.exists ? normalizeState(snap.data()) : buildDefaultState();
+
+            const slot = st.slots[slotIdStr] || { capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+            slot.bookings = slot.bookings || {};
+
+            const existing = slot.bookings[room];
+            if(existing && existing.pax > 0){
+              throw new Error(`ROOM_ALREADY_BOOKED|${existing.pax}`);
+            }
+            if(pax > slot.available){
+              throw new Error(`NO_SEATS|${slot.available}`);
+            }
+
             slot.bookings[room] = { pax, ...meta };
-            tx.set(ref, st, { merge:false });
+            slot.available = slot.available - pax;
+            st.slots[slotIdStr] = slot;
+
+            tx.set(ref, st, { merge: false });
+
+            const logRef = logsColRef().doc();
+            tx.set(logRef, {
+              ts: new Date(tsMs).toISOString(),
+              tsMs,
+              month: date.slice(0,7),
+              date,
+              action: "BOOK",
+              slotId: slotIdStr,
+              dir: meta.dir,
+              roundBase: meta.roundBase,
+              pickup: meta.pickup,
+              destination: meta.destination,
+              pickupTime: meta.pickupTime,
+              arriveTime: meta.arriveTime,
+              room,
+              pax
+            });
           });
-        }catch(e){
-          const msg = (e?.message === "ALREADY") ? "ห้องนี้จองแล้ว (กันการกดซ้ำ)" :
-                      (e?.message === "NOSEATS") ? "ที่นั่งไม่พอสำหรับจำนวนคนที่เลือก" :
-                      (e?.message === "NOT_FOUND") ? "ไม่พบรอบเวลานี้" :
-                      (e?.message || "จองไม่สำเร็จ");
-          return { ok:false, msg };
+
+          return { ok:true };
+        }catch(err){
+          const msg = String(err?.message || err || "");
+          if(msg.startsWith("ROOM_ALREADY_BOOKED|")){
+            const n = msg.split("|")[1] || "";
+            return { ok:false, msg:`ห้องนี้จองแล้ว ${n} คน (กันการกดซ้ำ)` };
+          }
+          if(msg.startsWith("NO_SEATS|")){
+            return { ok:false, msg:"ที่นั่งไม่พอสำหรับจำนวนคนที่เลือก" };
+          }
+          console.error("bookSeat firebase error", err);
+          return { ok:false, msg:"จองไม่สำเร็จ (ตรวจสอบ Firebase/Internet/Rules)" };
         }
+      }
 
-        // Add log AFTER transaction (avoid duplicates on retry)
-        await this.addLog({
-          tsISO: new Date().toISOString(),
-          date: dateKey,
-          month: dateKey.slice(0,7),
-          action: "BOOK",
-          slotId: sId,
-          ...meta,
-          room, pax
-        });
+      // Local fallback (เดิม)
+      const st = loadState();
+      const slot = st.slots[slotIdStr];
+      if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
 
-        const st2 = await this.getState(dateKey);
-        return { ok:true, state: st2 };
-      },
+      const existing = slot.bookings[room];
+      if(existing && existing.pax > 0){
+        return { ok:false, msg:`ห้องนี้จองแล้ว ${existing.pax} คน (กันการกดซ้ำ)` };
+      }
 
-      async transactCancel(dateKey, sId, room, pax){
-        const ref = doc(db, FS_STATE_COL, dateKey);
-        let existingMeta = null;
+      if(pax > slot.available) return { ok:false, msg:"ที่นั่งไม่พอสำหรับจำนวนคนที่เลือก" };
+      slot.bookings[room] = { pax, ...meta };
+      slot.available -= pax;
+      saveState(st);
+
+      addLog({
+        ts: new Date().toISOString(),
+        date: st.date,
+        action: "BOOK",
+        slotId: slotIdStr,
+        dir: meta.dir,
+        roundBase: meta.roundBase,
+        pickup: meta.pickup,
+        destination: meta.destination,
+        pickupTime: meta.pickupTime,
+        arriveTime: meta.arriveTime,
+        room,
+        pax
+      });
+      return { ok:true };
+    }async function cancelSeat(slotIdStr, room, pax){
+      // Firebase mode (transaction-safe)
+      if(FB.ready){
+        const date = todayKey();
+        const ref = stateDocRef(date);
+        const tsMs = Date.now();
 
         try{
-          await runTransaction(db, async (tx)=>{
+          await FB.db.runTransaction(async (tx) => {
             const snap = await tx.get(ref);
-            let st = snap.exists() ? snap.data() : buildDefaultState(dateKey);
-            st = mergeStateWithDefault(dateKey, st);
-            const slot = st.slots[sId];
-            if(!slot) throw new Error("NOT_FOUND");
-            const existing = slot.bookings?.[room];
-            const booked = existing ? (existing.pax || 0) : 0;
-            if(booked <= 0) throw new Error("NOBK");
-            if(pax > booked) throw new Error("TOO_MUCH");
+            let st = snap.exists ? normalizeState(snap.data()) : buildDefaultState();
 
-            existingMeta = existing;
+            const slot = st.slots[slotIdStr];
+            if(!slot) throw new Error("NO_SLOT");
+            slot.bookings = slot.bookings || {};
+
+            const existing = slot.bookings[room];
+            const booked = existing ? (existing.pax || 0) : 0;
+            if(booked <= 0) throw new Error("NO_BOOKING");
+            if(pax > booked) throw new Error(`TOO_MUCH_CANCEL|${booked}`);
 
             const left = booked - pax;
             if(left === 0) delete slot.bookings[room];
             else slot.bookings[room].pax = left;
 
-            slot.available = Math.min(slot.capacity, slot.available + pax);
-            tx.set(ref, st, { merge:false });
+            slot.available = Math.min(slot.capacity || CAPACITY_PER_TRIP, (slot.available || 0) + pax);
+            st.slots[slotIdStr] = slot;
+
+            tx.set(ref, st, { merge: false });
+
+            const logRef = logsColRef().doc();
+            tx.set(logRef, {
+              ts: new Date(tsMs).toISOString(),
+              tsMs,
+              month: date.slice(0,7),
+              date,
+              action: "CANCEL",
+              slotId: slotIdStr,
+              dir: existing?.dir || "",
+              roundBase: existing?.roundBase || "",
+              pickup: existing?.pickup || "",
+              destination: existing?.destination || "",
+              pickupTime: existing?.pickupTime || "",
+              arriveTime: existing?.arriveTime || "",
+              room,
+              pax
+            });
           });
-        }catch(e){
-          const msg = (e?.message === "NOT_FOUND") ? "ไม่พบรอบเวลานี้" :
-                      (e?.message === "NOBK") ? "เลขห้องนี้ยังไม่มีการจองในรอบนี้" :
-                      (e?.message === "TOO_MUCH") ? "ยกเลิกเกินจำนวนที่จองไว้" :
-                      (e?.message || "ยกเลิกไม่สำเร็จ");
-          return { ok:false, msg };
+
+          return { ok:true };
+        }catch(err){
+          const msg = String(err?.message || err || "");
+          if(msg === "NO_BOOKING"){
+            return { ok:false, msg:"เลขห้องนี้ยังไม่มีการจองในรอบนี้" };
+          }
+          if(msg.startsWith("TOO_MUCH_CANCEL|")){
+            const booked = msg.split("|")[1] || "";
+            return { ok:false, msg:`ยกเลิกเกินจำนวนที่จองไว้ (จองไว้ ${booked} คน)` };
+          }
+          console.error("cancelSeat firebase error", err);
+          return { ok:false, msg:"ยกเลิกไม่สำเร็จ (ตรวจสอบ Firebase/Internet/Rules)" };
         }
-
-        await this.addLog({
-          tsISO: new Date().toISOString(),
-          date: dateKey,
-          month: dateKey.slice(0,7),
-          action: "CANCEL",
-          slotId: sId,
-          dir: existingMeta?.dir || "",
-          roundBase: existingMeta?.roundBase || "",
-          pickup: existingMeta?.pickup || "",
-          destination: existingMeta?.destination || "",
-          pickupTime: existingMeta?.pickupTime || "",
-          arriveTime: existingMeta?.arriveTime || "",
-          placeKey: existingMeta?.placeKey || "",
-          room, pax
-        });
-
-        const st2 = await this.getState(dateKey);
-        return { ok:true, state: st2 };
-      },
-
-      async addLog(entry){
-        // Keep fields simple (avoid needing composite indexes)
-        const ref = collection(db, FS_LOGS_COL);
-        await addDoc(ref, {
-          ...entry,
-          // Optional server timestamp (not used for querying here)
-          ts: serverTimestamp ? serverTimestamp() : null,
-        });
-      },
-
-      async fetchLogs({ mode, value }){
-        const ref = collection(db, FS_LOGS_COL);
-        let q = null;
-        if(mode === "day"){
-          const day = value || todayKey();
-          q = query(ref, where("date", "==", day), limit(5000));
-        }else if(mode === "month"){
-          const mk = value || currentMonthKey();
-          q = query(ref, where("month", "==", mk), limit(5000));
-        }else{
-          // all
-          q = query(ref, limit(5000));
-        }
-        const snap = await getDocs(q);
-        const logs = snap.docs.map(d => d.data());
-        // sort desc by tsISO
-        logs.sort((a,b)=> String(b?.tsISO||"").localeCompare(String(a?.tsISO||"")));
-        return logs;
       }
-    };
 
-    // Decide backend
-    const backend = (FIREBASE_ENABLED) ? FirebaseBackend : LocalBackend;
-    let firebaseReady = false;
+      // Local fallback (เดิม)
+      const st = loadState();
+      const slot = st.slots[slotIdStr];
+      if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
 
-    // ============================
-    // Excel export
-    // ============================
-    function buildExcelHtml(logs){
-      const rows = logs.map((e)=>{
-        const ts = e?.tsISO ? new Date(e.tsISO).toLocaleString() : "";
-        const action = e?.action || "";
-        const dir = e?.dir === "out" ? "ขาไป" : (e?.dir === "back" ? "ขากลับ" : (e?.dir || ""));
-        const roundBase = e?.roundBase || "";
-        const pickup = e?.pickup || "";
-        const destination = e?.destination || "";
-        const pickupTime = e?.pickupTime || "";
-        const arriveTime = e?.arriveTime || "";
-        const room = e?.room || "";
-        const pax = (typeof e?.pax === "number") ? e.pax : "";
-        const date = e?.date || "";
-        return `
-<tr>
-  <td>${esc(ts)}</td>
-  <td>${esc(date)}</td>
-  <td>${esc(action)}</td>
-  <td>${esc(dir)}</td>
-  <td>${esc(roundBase)}</td>
-  <td>${esc(pickup)}</td>
-  <td>${esc(destination)}</td>
-  <td>${esc(pickupTime)}</td>
-  <td>${esc(arriveTime)}</td>
-  <td>${esc(room)}</td>
-  <td>${esc(pax)}</td>
-</tr>`;
-      }).join("\n");
+      const existing = slot.bookings[room];
+      const booked = existing ? (existing.pax || 0) : 0;
+      if(booked <= 0) return { ok:false, msg:"เลขห้องนี้ยังไม่มีการจองในรอบนี้" };
+      if(pax > booked) return { ok:false, msg:`ยกเลิกเกินจำนวนที่จองไว้ (จองไว้ ${booked} คน)` };
 
-      return `<!doctype html>
-<html>
-<head><meta charset="UTF-8" /></head>
-<body>
-<table border="1">
-<thead>
-<tr>
-<th>Timestamp</th>
-<th>Date</th>
-<th>Action</th>
-<th>Direction</th>
-<th>Round</th>
-<th>Pickup</th>
-<th>Destination</th>
-<th>Pickup time</th>
-<th>Arrival time</th>
-<th>Room</th>
-<th>Pax</th>
-</tr>
-</thead>
-<tbody>
-${rows}
-</tbody>
-</table>
-</body>
-</html>`;
+      const left = booked - pax;
+      if(left === 0) delete slot.bookings[room];
+      else slot.bookings[room].pax = left;
+
+      slot.available = Math.min(slot.capacity, slot.available + pax);
+      saveState(st);
+
+      addLog({
+        ts: new Date().toISOString(),
+        date: st.date,
+        action: "CANCEL",
+        slotId: slotIdStr,
+        dir: existing?.dir || "",
+        roundBase: existing?.roundBase || "",
+        pickup: existing?.pickup || "",
+        destination: existing?.destination || "",
+        pickupTime: existing?.pickupTime || "",
+        arriveTime: existing?.arriveTime || "",
+        room,
+        pax
+      });
+
+      return { ok:true };
+    }function calcTimes(dirKey, baseTime, placeKey){
+      const dir = DIRS[dirKey];
+      if(!dir || !placeKey) return null;
+
+      if(dirKey === "out"){
+        const dest = dir.timeline.find(x => x.key === placeKey);
+        if(!dest) return null;
+        return {
+          pickup: "Hotel",
+          destination: dest.name,
+          pickupTime: baseTime,
+          arriveTime: addMin(baseTime, dest.offset),
+        };
+      }
+
+      const pickupStop = dir.timeline.find(x => x.key === placeKey);
+      const hotelStop = dir.timeline.find(x => x.key === "HOTEL");
+      if(!pickupStop || !hotelStop) return null;
+
+      return {
+        pickup: pickupStop.name,
+        destination: "Hotel",
+        pickupTime: addMin(baseTime, pickupStop.offset),
+        arriveTime: addMin(baseTime, hotelStop.offset),
+      };
     }
 
-    async function exportExcel(mode){
-      const date = todayKey();
-      const month = currentMonthKey();
-      let value = "";
-      let suffix = `all-${date}`;
-      if(mode === "day"){ value = date; suffix = date; }
-      if(mode === "month"){ value = month; suffix = month; }
-      const logs = await backend.fetchLogs({ mode, value });
+    function computeStats(logs, dirKey, monthKey){
+      const per = {};
+      for(const t of DIRS[dirKey].baseTimes) per[t] = 0;
+
+      let countThisMonth = 0;
+      for(const e of logs){
+        if(!e || e.action !== "BOOK" || typeof e.pax !== "number") continue;
+        if(e.dir !== dirKey) continue;
+        if(monthKey && monthKeyFromISO(e.ts) !== monthKey) continue;
+        countThisMonth += 1;
+        if(e.roundBase) per[e.roundBase] = (per[e.roundBase] || 0) + e.pax;
+      }
+
+      const top = Object.entries(per).sort((a,b)=>b[1]-a[1])[0];
+      return {
+        per,
+        topTime: top?.[0] || null,
+        topValue: top?.[1] || 0,
+        countThisMonth,
+      };
+    }
+
+    function buildExcelHtml(logs){
+      const rows = logs.map((e) => {
+        const dt = new Date(e.ts);
+        const ts = Number.isFinite(dt.getTime()) ? dt.toLocaleString() : (e.ts || "");
+        const action = e.action || "";
+        const dir = e.dir === "out" ? "ขาไป" : (e.dir === "back" ? "ขากลับ" : (e.dir || ""));
+        const roundBase = e.roundBase || "";
+        const pickup = e.pickup || "";
+        const destination = e.destination || "";
+        const pickupTime = e.pickupTime || "";
+        const arriveTime = e.arriveTime || "";
+        const room = e.room || "";
+        const pax = (typeof e.pax === "number") ? e.pax : "";
+
+        return `\n<tr>\n<td>${escapeHtml(ts)}</td>\n<td>${escapeHtml(e.date || "")}</td>\n<td>${escapeHtml(action)}</td>\n<td>${escapeHtml(dir)}</td>\n<td>${escapeHtml(roundBase)}</td>\n<td>${escapeHtml(pickup)}</td>\n<td>${escapeHtml(destination)}</td>\n<td>${escapeHtml(pickupTime)}</td>\n<td>${escapeHtml(arriveTime)}</td>\n<td>${escapeHtml(room)}</td>\n<td>${escapeHtml(pax)}</td>\n</tr>`;
+      }).join("\\n");
+
+      return (`\n<!doctype html>\n<html>\n<head>\n<meta charset="UTF-8" />\n</head>\n<body>\n<table border="1">\n<thead>\n<tr>\n<th>Timestamp</th>\n<th>Date</th>\n<th>Action</th>\n<th>Direction</th>\n<th>Round</th>\n<th>Pickup</th>\n<th>Destination</th>\n<th>Pickup time</th>\n<th>Arrival time</th>\n<th>Room</th>\n<th>Pax</th>\n</tr>\n</thead>\n<tbody>\n${rows}\n</tbody>\n</table>\n</body>\n</html>\n`).trim();
+    }
+
+    function filterLogs(allLogs, mode, value){
+      if(mode === "day"){
+        const day = value || todayKey();
+        return allLogs.filter(e => (e?.date || "") === day);
+      }
+      if(mode === "month"){
+        const m = value || currentMonthKey();
+        return allLogs.filter(e => {
+          const byDate = (e?.date && String(e.date).length >= 7) ? String(e.date).slice(0,7) : "";
+          const mk = byDate || monthKeyFromISO(e?.ts || "");
+          return mk === m;
+        });
+      }
+      return allLogs;
+    }
+
+    async function exportLogsExcel(mode="all", value=""){
+      let logs = [];
+      const today = todayKey();
+
+      if(FB.ready){
+        try{
+          if(mode === "day"){
+            const day = value || today;
+            const qs = await logsColRef().where("date","==",day).get();
+            logs = qs.docs.map(d=>d.data());
+          } else if(mode === "month"){
+            const m = value || currentMonthKey();
+            const qs = await logsColRef().where("month","==",m).get();
+            logs = qs.docs.map(d=>d.data());
+          } else {
+            // all: limit for safety (ปรับได้)
+            const qs = await logsColRef().orderBy("tsMs","desc").limit(5000).get();
+            logs = qs.docs.map(d=>d.data());
+          }
+
+          logs.sort((a,b)=>(b?.tsMs||0)-(a?.tsMs||0));
+        }catch(err){
+          console.error("exportLogsExcel firebase error", err);
+          toast("Export ไม่สำเร็จ", "ตรวจสอบ Firestore / Rules / Internet");
+          return;
+        }
+      } else {
+        const allLogs = loadLogs();
+        logs = filterLogs(allLogs, mode, value);
+      }
+
+      let suffix = `all-${today}`;
+      if(mode === "day") suffix = value || today;
+      if(mode === "month") suffix = value || currentMonthKey();
+
       const html = buildExcelHtml(logs);
       const fname = `laya-shuttle-logs-${suffix}.xls`;
       downloadBlob(fname, "application/vnd.ms-excel;charset=utf-8", "\ufeff" + html);
-      toast("Export สำเร็จ", `จำนวน ${logs.length} รายการ • ${mode === "day" ? "วันนี้" : (mode === "month" ? "เดือนนี้" : "ทั้งหมด")}`);
-    }
-
-    // ============================
-    // UI: Nav
-    // ============================
-    function renderNav(active){
-      const nav = $("nav");
+    }function renderNav(active){
+      const nav = document.getElementById("nav");
       nav.innerHTML = "";
       const items = [
         { key:"/", label:"ตารางเวลา", href:"#/" },
@@ -872,235 +954,202 @@ ${rows}
       }
     }
 
-    // ============================
-    // View: Schedule (no log stats on home)
-    // ============================
-    async function viewSchedule(){
+    function viewSchedule(){
       renderNav("/");
-      const ui = backend.getUi();
-      const date = todayKey();
+      const ui = loadUi();
+      const st = loadState();
+      const logs = loadLogs();
 
-      // ensure realtime listener for firebase
-      if(backend === FirebaseBackend && firebaseReady){
-        await backend.getState(date);
-        await backend._listenState(date, () => {
-          // rerender only if we are still on home
-          const { path } = parseHash();
-          if(path === "/") viewSchedule().catch(console.error);
-        });
-      }
-
-      const st = await backend.getState(date);
       const dirKey = ui.dir;
       const dir = DIRS[dirKey];
 
-      const cards = dir.baseTimes.map((t)=>{
+      const d = new Date();
+      const monthKey = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+      const stats = computeStats(logs, dirKey, monthKey);
+
+      const cards = dir.baseTimes.map((t) => {
         const id = slotId(dirKey, t);
         const s = st.slots[id];
-        const closed = isClosed(t);
+        const closed = isClosedToday(t);
         const btnLabel = closed ? "ปิดแล้ว" : "เลือก";
         const btnKind = closed ? "primary" : "pick";
         const availClass = (s.available===0) ? "danger" : "";
-        return `
-<div class="slot">
-  <div class="meta">
-    <div class="time">${esc(t)}</div>
-    <div class="seat">ที่นั่งว่าง: <b class="${availClass}">${s.available}</b> / ${s.capacity}${closed ? ' • <span class="danger-text">ปิดทำรายการ</span>' : ""}</div>
-  </div>
-  <button class="btn ${btnKind}" ${(closed || s.available===0) ? "disabled" : ""} onclick="window.__openBooking('${dirKey}','${t}')">${btnLabel}</button>
-</div>`;
+        return `\n<div class="slot">\n  <div class="meta">\n    <div class="time">${escapeHtml(t)}</div>\n    <div class="seat">ที่นั่งว่าง: <b class="${availClass}">${s.available}</b> / ${s.capacity}${closed ? " • <span class=\"danger-text\">ปิดทำรายการ</span>" : ""}</div>\n  </div>\n  <button class="btn ${btnKind}" ${(closed || s.available===0) ? "disabled" : ""} onclick="window.__openBooking('${dirKey}','${t}')">${btnLabel}</button>\n</div>`;
       }).join("\n");
 
-      const modeBadge = (backend.mode === "firebase" && firebaseReady)
-        ? `<span class="badge"><span class="dot ok"></span> Firebase Realtime</span>`
-        : `<span class="badge"><span class="dot"></span> Local</span>`;
+      const maxVal = Math.max(...Object.values(stats.per));
+      const bars = Object.entries(stats.per)
+        .sort((a,b)=>a[0].localeCompare(b[0]))
+        .map(([t,v]) => {
+          const w = maxVal ? Math.round((v/maxVal)*100) : 0;
+          return `\n<div class="bar">\n  <div class="lbl">${escapeHtml(t)}</div>\n  <div class="track"><div class="fill" style="width:${w}%"></div></div>\n  <div class="num">${v}</div>\n</div>`;
+        }).join("\n");
 
-      const rightInfo = (backend.mode === "firebase" && !firebaseReady)
-        ? `<div class="note"><b class="danger-text">ยังไม่พร้อมใช้งาน Firebase</b><br/>กรุณากรอก firebaseConfig และตั้งค่า Authorized domains / Anonymous Auth ตามคู่มือ</div>`
-        : `<div class="note">Export สามารถเลือกได้: <b>วันนี้ / เดือนนี้ / ทั้งหมด</b><br/>แนะนำ Export เดือนละครั้งเพื่อสรุปสถิติ</div>`;
+      const el = document.getElementById("view");
+      el.innerHTML = `
+        <div class="grid">
+          <section class="card">
+            <div class="card-h">
+              <div>
+                <h2>ตารางเวลาเดินรถ</h2>
+                <p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วกด “เลือก” เพื่อไปหน้าเลือกปลายทาง/จุดรับ</p>
+              </div>
+              <div class="row">
+                <span class="badge"><span class="dot"></span> ${FB.ready ? "Firebase" : "Local"}</span>
+                <button class="chip ${dirKey==="out"?"active":""}" onclick="window.__setDir('out')">ขาไป</button>
+                <button class="chip ${dirKey==="back"?"active":""}" onclick="window.__setDir('back')">ขากลับ</button>
+              </div>
+            </div>
+            <div class="card-b">
+              <div class="slots">${cards}</div>
+              <div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วจอง/ยกเลิกไม่ได้</div>
+            </div>
+          </section>
 
-      $("view").innerHTML = `
-<div class="grid">
-  <section class="card">
-    <div class="card-h">
-      <div>
-        <h2>ตารางเวลาเดินรถ</h2>
-        <p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วกด “เลือก” เพื่อไปหน้าเลือกปลายทาง/จุดรับ</p>
-      </div>
-      <div class="row">
-        ${modeBadge}
-        <button class="chip ${dirKey==="out"?"active":""}" onclick="window.__setDir('out')">ขาไป</button>
-        <button class="chip ${dirKey==="back"?"active":""}" onclick="window.__setDir('back')">ขากลับ</button>
-      </div>
-    </div>
-    <div class="card-b">
-      <div class="slots">${cards}</div>
-      <div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วจอง/ยกเลิกไม่ได้</div>
-    </div>
-  </section>
+          <aside class="card">
+            <div class="card-h">
+              <div>
+                <h2>สถิติจาก Log</h2>
+                <p class="hint">โหมด: <b>${dirKey==="out"?"ขาไป":"ขากลับ"}</b> • เดือน <b>${monthKey}</b> (ยอด BOOK รวม)</p>
+              </div>
+            </div>
+            <div class="card-b">
+              <div class="kpi">
+                <div class="big">${stats.topTime ? escapeHtml(stats.topTime) : "—"}</div>
+                <div class="small">ยอดจองรวมสูงสุด • <b>${stats.topValue}</b> คน</div>
+                <div class="divider"></div>
+                <div class="small">Log เดือนนี้โหลด: <b>${stats.countThisMonth}</b> รายการ • Log ทั้งหมด: <b>${logs.length}</b></div>
+              </div>
+              <div style="height:12px"></div>
+              <div class="barwrap">${bars}</div>
+              <div class="divider"></div>
+              <div class="footer-actions">
+                <button class="btn" onclick="window.__exportDay()">Export วันนี้</button>
+                <button class="btn" onclick="window.__exportMonth()">Export เดือนนี้</button>
+                <button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button>
+                <button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันนี้)</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      `;
 
-  <aside class="card">
-    <div class="card-h">
-      <div>
-        <h2>Export Log</h2>
-        <p class="hint">Export เป็นไฟล์ Excel (.xls) ตามช่วงที่ต้องการ</p>
-      </div>
-    </div>
-    <div class="card-b">
-      <div class="row" style="justify-content:flex-end">
-        <button class="btn" onclick="window.__exportDay()">Export วันนี้</button>
-        <button class="btn" onclick="window.__exportMonth()">Export เดือนนี้</button>
-        <button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button>
-      </div>
-      <div class="divider"></div>
-      <div class="row" style="justify-content:flex-end">
-        <button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันนี้)</button>
-      </div>
-      ${rightInfo}
-    </div>
-  </aside>
-</div>`;
-
-      window.__setDir = (d)=>{
-        backend.setUi({ dir: (d==="back") ? "back" : "out" });
-        viewSchedule().catch(console.error);
+      window.__setDir = (d2) => {
+        const ui2 = loadUi();
+        ui2.dir = (d2 === "back") ? "back" : "out";
+        saveUi(ui2);
+        render();
       };
-
-      window.__openBooking = (d,t)=>{
-        setHash(`/book?dir=${encodeURIComponent(d)}&time=${encodeURIComponent(t)}`);
-      };
-
-      window.__exportDay = ()=> exportExcel("day").catch(e=>toast("Export ไม่สำเร็จ", e?.message||String(e)));
-      window.__exportMonth = ()=> exportExcel("month").catch(e=>toast("Export ไม่สำเร็จ", e?.message||String(e)));
-      window.__exportAll = ()=> exportExcel("all").catch(e=>toast("Export ไม่สำเร็จ", e?.message||String(e)));
-
-      window.__resetSeats = async ()=>{
+      window.__openBooking = (d2, t2) => setHash(`/book?dir=${encodeURIComponent(d2)}&time=${encodeURIComponent(t2)}`);
+      window.__exportDay = () => exportLogsExcel("day", todayKey());
+      window.__exportMonth = () => exportLogsExcel("month", currentMonthKey());
+      window.__exportAll = () => exportLogsExcel("all");
+      window.__resetSeats = () => {
         if(!confirm("ต้องการรีเซ็ตที่นั่งของวันนี้ (ไม่ลบ Log) ใช่ไหม?")) return;
-        await backend.resetState(date);
-        toast("รีเซ็ตที่นั่งแล้ว", `วันที่ ${date}`);
-        viewSchedule().catch(console.error);
+        const st2 = buildDefaultState();
+        saveState(st2);
+        toast("รีเซ็ตที่นั่งแล้ว", `วันที่ ${st2.date}`);
+        render();
       };
     }
 
-    // ============================
-    // View: Booking
-    // ============================
-    async function viewBooking(dirKey, baseTime){
+    function viewBooking(dirKey, baseTime){
       renderNav("/");
-      const date = todayKey();
+      const st = loadState();
       const dir = (dirKey === "back") ? DIRS.back : DIRS.out;
+      const id = slotId(dir.key, baseTime);
+      const slot = st.slots[id];
+      if(!slot){ toast("ไม่พบรอบเวลา", "กลับไปเลือกใหม่"); setHash("/"); return; }
 
-      if(isClosed(baseTime)){
-        toast("ปิดทำรายการแล้ว", "รอบนี้ไม่สามารถจอง/ยกเลิกได้");
-      }
+      const closed = isClosedToday(baseTime);
+      const options = dir.selectable
+        .map(p => `<option value="${escapeHtml(p.key)}">${escapeHtml(p.name)}</option>`)
+        .join("");
 
-      // ensure state + listen
-      if(backend === FirebaseBackend && firebaseReady){
-        await backend.getState(date);
-        await backend._listenState(date, () => {
-          const { path, params } = parseHash();
-          if(path === "/book"){
-            const d = params.get("dir") || "out";
-            const t = params.get("time") || "";
-            if(t === baseTime && d === dirKey){
-              viewBooking(dirKey, baseTime).catch(console.error);
-            }
-          }
-        });
-      }
+      const el = document.getElementById("view");
+      el.innerHTML = `
+        <section class="card">
+          <div class="card-h">
+            <div>
+              <h2>${dir.label} • รอบเวลา <span style="color:var(--gold2)">${escapeHtml(baseTime)}</span></h2>
+              <p class="hint">เลือก ${escapeHtml(dir.selectLabel)} ก่อน แล้วระบบจะแสดงเวลาถึง</p>
+            </div>
+            <div class="row">
+              <button class="btn" onclick="window.__back()">ย้อนกลับ</button>
+            </div>
+          </div>
 
-      const st = await backend.getState(date);
-      const sId = slotId(dir.key, baseTime);
-      const slot = st.slots[sId];
-      if(!slot){
-        toast("ไม่พบรอบเวลา", "กลับไปเลือกใหม่");
-        setHash("/");
-        return;
-      }
+          <div class="card-b" style="max-width: 860px;">
+            <div class="row" style="gap: 12px;">
+              <div class="field" style="flex: 1 1 360px;">
+                <label for="place">${escapeHtml(dir.selectLabel)}</label>
+                <select id="place">
+                  <option value="">— โปรดเลือก —</option>
+                  ${options}
+                </select>
+              </div>
+              <div class="field" style="flex: 1 1 260px;">
+                <label>เวลาถึงโดยประมาณ</label>
+                <input id="arrival" readonly value="—" />
+              </div>
+            </div>
 
-      const options = dir.selectable.map(p=>`<option value="${esc(p.key)}">${esc(p.name)}</option>`).join("");
+            <div class="note" id="routeNote">เลือก ${escapeHtml(dir.selectLabel)} เพื่อคำนวณเวลา</div>
 
-      $("view").innerHTML = `
-<section class="card">
-  <div class="card-h">
-    <div>
-      <h2>${esc(dir.label)} • รอบเวลา <span style="color:var(--gold2)">${esc(baseTime)}</span></h2>
-      <p class="hint">เลือก ${esc(dir.selectLabel)} ก่อน แล้วระบบจะแสดงเวลาถึง</p>
-    </div>
-    <div class="row">
-      <button class="btn" onclick="window.__back()">ย้อนกลับ</button>
-    </div>
-  </div>
+            <div class="divider"></div>
 
-  <div class="card-b" style="max-width: 860px;">
-    <div class="row" style="gap: 12px;">
-      <div class="field" style="flex: 1 1 360px;">
-        <label for="place">${esc(dir.selectLabel)}</label>
-        <select id="place">
-          <option value="">— โปรดเลือก —</option>
-          ${options}
-        </select>
-      </div>
-      <div class="field" style="flex: 1 1 260px;">
-        <label>เวลาถึงโดยประมาณ</label>
-        <input id="arrival" readonly value="—" />
-      </div>
-    </div>
+            <div class="row" style="gap: 12px;">
+              <div class="field" style="flex: 1 1 260px;">
+                <label for="room">เลขห้อง</label>
+                <input id="room" autocomplete="off" placeholder="เช่น A105" />
+              </div>
+              <div class="field" style="flex: 0 0 240px;">
+                <label for="pax">จำนวนคน</label>
+                <input id="pax" type="number" min="1" step="1" inputmode="numeric" placeholder="เช่น 2" />
+              </div>
+            </div>
 
-    <div class="note" id="routeNote">เลือก ${esc(dir.selectLabel)} เพื่อคำนวณเวลา</div>
+            <div style="height: 12px"></div>
 
-    <div class="divider"></div>
+            <div class="row">
+              <button id="btnBook" class="btn primary" onclick="window.__book()">จอง</button>
+              <button class="btn danger" onclick="window.__cancel()">ยกเลิกการจอง</button>
+              <span class="badge"><span class="dot"></span> 1 ห้อง/1 รอบ จองได้ครั้งเดียว</span>
+            </div>
 
-    <div class="row" style="gap: 12px;">
-      <div class="field" style="flex: 1 1 260px;">
-        <label for="room">เลขห้อง</label>
-        <input id="room" autocomplete="off" placeholder="เช่น A105" />
-      </div>
-      <div class="field" style="flex: 0 0 240px;">
-        <label for="pax">จำนวนคน</label>
-        <input id="pax" type="number" min="1" step="1" inputmode="numeric" placeholder="เช่น 2" />
-      </div>
-    </div>
+            <div class="mini" id="mini"></div>
+            <div class="note" id="note"></div>
 
-    <div style="height: 12px"></div>
+            <div class="divider"></div>
 
-    <div class="row">
-      <button id="btnBook" class="btn primary" onclick="window.__book()">จอง</button>
-      <button class="btn danger" onclick="window.__cancel()">ยกเลิกการจอง</button>
-      <span class="badge"><span class="dot"></span> 1 ห้อง/1 รอบ จองได้ครั้งเดียว</span>
-    </div>
+            <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
+              <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
+                <div>
+                  <h2 style="font-size: 15.5px;">รายการจองในรอบนี้</h2>
+                  <p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาถึง</p>
+                </div>
+              </div>
+              <div class="card-b" id="bookingsTable"></div>
+            </div>
+          </div>
+        </section>
+      `;
 
-    <div class="mini" id="mini"></div>
-    <div class="note" id="note"></div>
+      const placeEl = document.getElementById("place");
+      const arrivalEl = document.getElementById("arrival");
+      const routeNoteEl = document.getElementById("routeNote");
+      const roomEl = document.getElementById("room");
+      const paxEl = document.getElementById("pax");
+      const bookBtn = document.getElementById("btnBook");
+      const noteEl = document.getElementById("note");
 
-    <div class="divider"></div>
-
-    <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
-      <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
-        <div>
-          <h2 style="font-size: 15.5px;">รายการจองในรอบนี้</h2>
-          <p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาถึง</p>
-        </div>
-      </div>
-      <div class="card-b" id="bookingsTable"></div>
-    </div>
-  </div>
-</section>`;
-
-      const placeEl = $("place");
-      const arrivalEl = $("arrival");
-      const routeNoteEl = $("routeNote");
-      const roomEl = $("room");
-      const paxEl = $("pax");
-      const bookBtn = $("btnBook");
-      const noteEl = $("note");
-
-      const updateMini = async ()=>{
-        const st2 = await backend.getState(date);
-        const sl = st2.slots[sId];
-        const closedNow = isClosed(baseTime);
+      function updateMini(){
+        const st2 = loadState();
+        const sl = st2.slots[id];
+        const closedNow = isClosedToday(baseTime);
+        const miniEl = document.getElementById("mini");
         const bClass = sl.available===0 ? "danger" : "";
-        $("mini").innerHTML = `<b>คงเหลือ:</b> ที่นั่งว่าง <b class="${bClass}">${sl.available}</b> / ${sl.capacity}${closedNow ? ' • <span class="danger-text"><b>ปิดทำรายการแล้ว</b></span>' : ''}<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>`;
+        miniEl.innerHTML = `<b>คงเหลือ:</b> ที่นั่งว่าง <b class="${bClass}">${sl.available}</b> / ${sl.capacity}${closedNow ? ' • <span class="danger-text"><b>ปิดทำรายการแล้ว</b></span>' : ''}<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>`;
 
         if(closedNow){
           bookBtn.disabled = true;
@@ -1108,11 +1157,10 @@ ${rows}
           roomEl.disabled = true;
           paxEl.disabled = true;
         }
-      };
+      }
 
-      const updateArrivalPreview = ()=>{
-        const placeKey = placeEl.value;
-        const times = calcTimes(dir.key, baseTime, placeKey);
+      function updateArrivalPreview(){
+        const times = calcTimes(dir.key, baseTime, placeEl.value);
         if(!times){
           arrivalEl.value = "—";
           routeNoteEl.textContent = `เลือก ${dir.selectLabel} เพื่อคำนวณเวลา`;
@@ -1120,16 +1168,16 @@ ${rows}
         }
         if(dir.key === "out"){
           arrivalEl.value = `ถึง ${times.destination} ${times.arriveTime}`;
-          routeNoteEl.innerHTML = `ออกจาก <b>${esc(times.pickup)}</b> เวลา <b>${esc(times.pickupTime)}</b> • ถึง <b>${esc(times.destination)}</b> เวลา <b>${esc(times.arriveTime)}</b>`;
-        }else{
+          routeNoteEl.innerHTML = `ออกจาก <b>${escapeHtml(times.pickup)}</b> เวลา <b>${escapeHtml(times.pickupTime)}</b> • ถึง <b>${escapeHtml(times.destination)}</b> เวลา <b>${escapeHtml(times.arriveTime)}</b>`;
+        } else {
           arrivalEl.value = `ถึง Hotel ${times.arriveTime}`;
-          routeNoteEl.innerHTML = `รับที่ <b>${esc(times.pickup)}</b> เวลา <b>${esc(times.pickupTime)}</b> • ถึง <b>Hotel</b> เวลา <b>${esc(times.arriveTime)}</b>`;
+          routeNoteEl.innerHTML = `รับที่ <b>${escapeHtml(times.pickup)}</b> เวลา <b>${escapeHtml(times.pickupTime)}</b> • ถึง <b>Hotel</b> เวลา <b>${escapeHtml(times.arriveTime)}</b>`;
         }
-      };
+      }
 
-      const updateBookBtn = async ()=>{
-        const st2 = await backend.getState(date);
-        const sl = st2.slots[sId];
+      function updateBookBtn(){
+        const st2 = loadState();
+        const sl = st2.slots[id];
         const room = (roomEl.value || "").trim();
         const existing = room ? sl.bookings?.[room] : null;
         const booked = existing ? (existing.pax || 0) : 0;
@@ -1137,45 +1185,46 @@ ${rows}
         if(room && booked > 0){
           bookBtn.disabled = true;
           const placeText = (existing.pickup && existing.destination) ? `${existing.pickup} → ${existing.destination}` : "";
-          noteEl.innerHTML = `ห้อง <b>${esc(room)}</b> จองแล้ว <b>${booked}</b> คนในรอบนี้${placeText ? ` (${esc(placeText)})` : ""} — กันการกดซ้ำ`;
-        }else{
-          if(!isClosed(baseTime)) bookBtn.disabled = false;
+          noteEl.innerHTML = `ห้อง <b>${escapeHtml(room)}</b> จองแล้ว <b>${booked}</b> คนในรอบนี้${placeText ? ` (${escapeHtml(placeText)})` : ""} — กันการกดซ้ำ`;
+        } else {
+          if(!isClosedToday(baseTime)) bookBtn.disabled = false;
           noteEl.textContent = "";
         }
-      };
+      }
 
-      const renderBookingsTable = async ()=>{
-        const st2 = await backend.getState(date);
-        const sl = st2.slots[sId];
+      function renderBookingsTable(){
+        const st2 = loadState();
+        const sl = st2.slots[id];
         const entries = Object.entries(sl.bookings || {}).sort((a,b)=>a[0].localeCompare(b[0]));
-        const wrap = $("bookingsTable");
+        const wrap = document.getElementById("bookingsTable");
         if(entries.length === 0){
           wrap.innerHTML = `<div class="mini">ยังไม่มีการจองในรอบนี้</div>`;
           return;
         }
-        const rows = entries.map(([room,obj])=>{
+        const rows = entries.map(([room, obj]) => {
           const pax = obj?.pax ?? "";
           const line = (obj?.pickup && obj?.destination) ? `${obj.pickup} → ${obj.destination}` : "";
           const arrive = obj?.arriveTime ? `ถึง ${obj.arriveTime}` : "";
-          return `<tr><td>${esc(room)}</td><td><b>${esc(pax)}</b></td><td>${esc(line)}</td><td>${esc(arrive)}</td></tr>`;
+          return `<tr><td>${escapeHtml(room)}</td><td><b>${escapeHtml(pax)}</b></td><td>${escapeHtml(line)}</td><td>${escapeHtml(arrive)}</td></tr>`;
         }).join("");
         wrap.innerHTML = `<table><thead><tr><th>เลขห้อง</th><th>จำนวนคน</th><th>เส้นทาง</th><th>เวลาถึง</th></tr></thead><tbody>${rows}</tbody></table>`;
-      };
+      }
 
-      const refresh = async ()=>{
-        await updateMini();
+      function refresh(){
+        updateMini();
         updateArrivalPreview();
-        await updateBookBtn();
-        await renderBookingsTable();
-      };
+        updateBookBtn();
+        renderBookingsTable();
+      }
 
-      placeEl.addEventListener("change", ()=>refresh().catch(console.error));
-      roomEl.addEventListener("input", ()=>refresh().catch(console.error));
+      placeEl.addEventListener("change", refresh);
+      roomEl.addEventListener("input", refresh);
 
-      window.__back = ()=> setHash("/");
+      window.__back = () => setHash("/");
 
-      window.__book = async ()=>{
-        if(isClosed(baseTime)){ toast("ปิดทำรายการแล้ว","รอบนี้ไม่สามารถจองได้"); return; }
+      window.__book = async () => {
+        if(closed){ toast("ปิดทำรายการแล้ว", "รอบนี้ไม่สามารถจองได้"); return; }
+
         const placeKey = (placeEl.value || "").trim();
         const room = (roomEl.value || "").trim();
         const pax = Number.parseInt(paxEl.value, 10);
@@ -1188,266 +1237,198 @@ ${rows}
         if(!times){ toast("ข้อมูลไม่ถูกต้อง", "ไม่สามารถคำนวณเวลาได้"); return; }
 
         bookBtn.disabled = true;
-
-        const res = await backend.transactBook(date, sId, room, pax, {
+        const res = await bookSeat(id, room, pax, {
           dir: dir.key,
           roundBase: baseTime,
           pickup: times.pickup,
           destination: times.destination,
           pickupTime: times.pickupTime,
           arriveTime: times.arriveTime,
-          placeKey
+          placeKey,
         });
-
-        if(!res.ok){ toast("จองไม่สำเร็จ", res.msg); await refresh(); return; }
+        if(!res.ok){ toast("จองไม่สำเร็จ", res.msg); refresh(); return; }
 
         toast("จองสำเร็จ", `${dir.label} • ห้อง ${room} • ${pax} คน • ถึง ${times.arriveTime}`);
-        await refresh();
+        refresh();
       };
 
-      window.__cancel = async ()=>{
-        if(isClosed(baseTime)){ toast("ปิดทำรายการแล้ว","รอบนี้ไม่สามารถยกเลิกได้"); return; }
+      window.__cancel = async () => {
+        if(closed){ toast("ปิดทำรายการแล้ว", "รอบนี้ไม่สามารถยกเลิกได้"); return; }
+
         const room = (roomEl.value || "").trim();
         const pax = Number.parseInt(paxEl.value, 10);
-        if(!room){ toast("ข้อมูลไม่ครบ","กรุณาใส่เลขห้อง"); return; }
-        if(!Number.isFinite(pax) || pax <= 0){ toast("ข้อมูลไม่ครบ","กรุณาใส่จำนวนคน"); return; }
+        if(!room){ toast("ข้อมูลไม่ครบ", "กรุณาใส่เลขห้อง"); return; }
+        if(!Number.isFinite(pax) || pax <= 0){ toast("ข้อมูลไม่ครบ", "กรุณาใส่จำนวนคน"); return; }
 
-        const res = await backend.transactCancel(date, sId, room, pax);
-        if(!res.ok){ toast("ยกเลิกไม่สำเร็จ", res.msg); await refresh(); return; }
+        const res = await cancelSeat(id, room, pax);
+        if(!res.ok){ toast("ยกเลิกไม่สำเร็จ", res.msg); refresh(); return; }
 
         toast("ยกเลิกสำเร็จ", `คืนที่นั่ง ${pax} คน • ห้อง ${room}`);
-        await refresh();
+        refresh();
       };
 
-      await refresh();
+      refresh();
     }
 
-    // ============================
-    // View: Logs + Export picker
-    // ============================
-    function sumByRound(logs, dirKey){
-      const per = {};
-      for(const t of DIRS[dirKey].baseTimes) per[t] = 0;
-      for(const e of logs){
-        if(e?.action !== "BOOK") continue;
-        if(e?.dir !== dirKey) continue;
-        const rb = e?.roundBase;
-        if(rb) per[rb] = (per[rb] || 0) + (typeof e?.pax === "number" ? e.pax : 0);
-      }
-      const top = Object.entries(per).sort((a,b)=>b[1]-a[1])[0];
-      return { per, topTime: top?.[0] || "—", topValue: top?.[1] || 0 };
-    }
-
-    async function viewLogs(){
+    function viewLogs(){
       renderNav("/logs");
-      const monthKey = currentMonthKey();
-      const logsMonth = await backend.fetchLogs({ mode:"month", value: monthKey });
+      const logs = loadLogs();
+      const d = new Date();
+      const monthKey = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
 
-      const outStats = sumByRound(logsMonth, "out");
-      const backStats = sumByRound(logsMonth, "back");
+      const outStats = computeStats(logs, "out", monthKey);
+      const backStats = computeStats(logs, "back", monthKey);
 
-      const barsFor = (stats)=>{
+      function barsFor(stats){
         const maxVal = Math.max(...Object.values(stats.per));
-        return Object.entries(stats.per).sort((a,b)=>a[0].localeCompare(b[0])).map(([t,v])=>{
-          const w = maxVal ? Math.round((v/maxVal)*100) : 0;
-          return `
-<div class="slot" style="padding:10px 12px;">
-  <div class="meta" style="gap:4px;">
-    <div style="font-weight:900; color: var(--muted)">${esc(t)}</div>
-    <div class="seat" style="font-size:13px;"><span style="display:inline-block; width: 210px; height:12px; background: rgba(131,106,69,.10); border-radius: 999px; overflow:hidden; vertical-align:middle;">
-      <span style="display:block; width:${w}%; height:100%; background: linear-gradient(90deg, rgba(131,106,69,.60), rgba(176,163,144,.22));"></span>
-    </span> <b style="color:var(--gold2); font-size:13px;">${v}</b></div>
-  </div>
-</div>`;
-        }).join("\n");
-      };
+        return Object.entries(stats.per)
+          .sort((a,b)=>a[0].localeCompare(b[0]))
+          .map(([t,v]) => {
+            const w = maxVal ? Math.round((v/maxVal)*100) : 0;
+            return `\n<div class="bar">\n  <div class="lbl">${escapeHtml(t)}</div>\n  <div class="track"><div class="fill" style="width:${w}%"></div></div>\n  <div class="num">${v}</div>\n</div>`;
+          }).join("\n");
+      }
 
-      const recent = logsMonth.slice(0, 250);
-      const rows = recent.map((e)=>{
-        const ts = e?.tsISO ? new Date(e.tsISO).toLocaleString() : "";
-        const action = e?.action === "BOOK"
+      const rows = logs.slice(0, 250).map((e) => {
+        const dt = new Date(e.ts);
+        const ts = Number.isFinite(dt.getTime()) ? dt.toLocaleString() : (e.ts || "");
+        const action = e.action === "BOOK"
           ? `<span style="color:var(--ok);font-weight:900">BOOK</span>`
           : `<span style="color:var(--danger);font-weight:900">CANCEL</span>`;
-        const dir = e?.dir === "out" ? "ขาไป" : (e?.dir === "back" ? "ขากลับ" : (e?.dir || ""));
-        const route = (e?.pickup && e?.destination) ? `${e.pickup} → ${e.destination}` : "";
-        return `
-<tr>
-  <td>${esc(ts)}</td>
-  <td>${action}</td>
-  <td>${esc(dir)}</td>
-  <td>${esc(e?.roundBase || "")}</td>
-  <td>${esc(route)}</td>
-  <td>${esc(e?.arriveTime || "")}</td>
-  <td>${esc(e?.room || "")}</td>
-  <td><b>${esc(typeof e?.pax === "number" ? e.pax : "")}</b></td>
-</tr>`;
+        const dir = e.dir === "out" ? "ขาไป" : (e.dir === "back" ? "ขากลับ" : (e.dir || ""));
+        const route = (e.pickup && e.destination) ? `${e.pickup} → ${e.destination}` : "";
+        return `\n<tr>\n<td>${escapeHtml(ts)}</td>\n<td>${action}</td>\n<td>${escapeHtml(dir)}</td>\n<td>${escapeHtml(e.roundBase || "")}</td>\n<td>${escapeHtml(route)}</td>\n<td>${escapeHtml(e.arriveTime || "")}</td>\n<td>${escapeHtml(e.room || "")}</td>\n<td><b>${escapeHtml(typeof e.pax === "number" ? e.pax : "")}</b></td>\n</tr>`;
       }).join("\n");
 
-      $("view").innerHTML = `
-<section class="card">
-  <div class="card-h">
-    <div>
-      <h2>บันทึก/สถิติ</h2>
-      <p class="hint">เดือน <b>${esc(monthKey)}</b> • Export ได้ทั้ง “วัน / เดือน / ทั้งหมด” • แสดง Log ล่าสุด 250 รายการ</p>
-    </div>
-    <div class="row">
-      <button class="btn primary" onclick="window.__goSchedule()">กลับหน้าตาราง</button>
-    </div>
-  </div>
-
-  <div class="card-b">
-    <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14); margin-bottom: 12px;">
-      <div class="card-b">
-        <div class="row" style="align-items:flex-end; justify-content:space-between">
-          <div class="row" style="flex:1;">
-            <div class="field" style="max-width: 230px;">
-              <label for="expDay">Export ตามวัน</label>
-              <input id="expDay" type="date" />
+      const el = document.getElementById("view");
+      el.innerHTML = `
+        <section class="card">
+          <div class="card-h">
+            <div>
+              <h2>บันทึก/สถิติ</h2>
+              <p class="hint">เดือน <b>${monthKey}</b> • Export Excel ได้ • แสดง Log ล่าสุด 250 รายการ</p>
             </div>
-            <button class="btn" onclick="window.__exportDayPicked()">Export วัน</button>
-
-            <div class="field" style="max-width: 230px;">
-              <label for="expMonth">Export ตามเดือน</label>
-              <input id="expMonth" type="month" />
+            <div class="row">
+              <button class="btn primary" onclick="window.__exportAll()">Export ทั้งหมด</button>
+              <button class="btn" onclick="window.__goSchedule()">กลับหน้าตาราง</button>
             </div>
-            <button class="btn" onclick="window.__exportMonthPicked()">Export เดือน</button>
           </div>
-          <div class="row">
-            <button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button>
+
+          <div class="card-b">
+            <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14); margin-bottom: 12px;">
+              <div class="card-b">
+                <div class="row" style="align-items:flex-end; justify-content:flex-start;">
+                  <div class="field" style="max-width: 230px;">
+                    <label for="expDay">Export ตามวัน</label>
+                    <input id="expDay" type="date" />
+                  </div>
+                  <button class="btn" onclick="window.__exportDayFromInput()">Export วัน</button>
+                  <div class="field" style="max-width: 230px;">
+                    <label for="expMonth">Export ตามเดือน</label>
+                    <input id="expMonth" type="month" />
+                  </div>
+                  <button class="btn" onclick="window.__exportMonthFromInput()">Export เดือน</button>
+                  <button class="btn primary" onclick="window.__exportAll()">Export ทั้งหมด</button>
+                </div>
+                <div class="mini">Export วัน = เฉพาะวันที่เลือก • Export เดือน = เฉพาะเดือนที่เลือก</div>
+              </div>
+            </div>
+
+            <div class="grid">
+              <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
+                <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
+                  <div>
+                    <h2 style="font-size: 15.5px;">สถิติ • ขาไป</h2>
+                    <p class="hint">เวลาที่จองเยอะสุด: <b>${outStats.topTime || "—"}</b> (${outStats.topValue} คน)</p>
+                  </div>
+                </div>
+                <div class="card-b"><div class="barwrap">${barsFor(outStats)}</div></div>
+              </div>
+
+              <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
+                <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
+                  <div>
+                    <h2 style="font-size: 15.5px;">สถิติ • ขากลับ</h2>
+                    <p class="hint">เวลาที่จองเยอะสุด: <b>${backStats.topTime || "—"}</b> (${backStats.topValue} คน)</p>
+                  </div>
+                </div>
+                <div class="card-b"><div class="barwrap">${barsFor(backStats)}</div></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>เวลา</th>
+                  <th>Action</th>
+                  <th>ขา</th>
+                  <th>รอบ</th>
+                  <th>เส้นทาง</th>
+                  <th>ถึง</th>
+                  <th>ห้อง</th>
+                  <th>คน</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows || `<tr><td colspan="8" class="mini">ยังไม่มี Log</td></tr>`}
+              </tbody>
+            </table>
+
+            <div class="mini">Log ทั้งหมด: ${logs.length} รายการ</div>
           </div>
-        </div>
-        <div class="mini">หมายเหตุ: Export วัน = เฉพาะวันที่เลือก • Export เดือน = เฉพาะเดือนที่เลือก</div>
-      </div>
-    </div>
+        </section>
+      `;
 
-    <div class="grid">
-      <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
-        <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
-          <div>
-            <h2 style="font-size: 15.5px;">สถิติ • ขาไป</h2>
-            <p class="hint">เวลาที่จองเยอะสุด: <b>${esc(outStats.topTime)}</b> (${outStats.topValue} คน)</p>
-          </div>
-        </div>
-        <div class="card-b">${barsFor(outStats)}</div>
-      </div>
+      const dayEl = document.getElementById("expDay");
+      const monthEl = document.getElementById("expMonth");
+      if(dayEl) dayEl.value = todayKey();
+      if(monthEl) monthEl.value = currentMonthKey();
 
-      <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
-        <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
-          <div>
-            <h2 style="font-size: 15.5px;">สถิติ • ขากลับ</h2>
-            <p class="hint">เวลาที่จองเยอะสุด: <b>${esc(backStats.topTime)}</b> (${backStats.topValue} คน)</p>
-          </div>
-        </div>
-        <div class="card-b">${barsFor(backStats)}</div>
-      </div>
-    </div>
+      window.__exportDayFromInput = () => exportLogsExcel("day", (dayEl && dayEl.value) ? dayEl.value : todayKey());
+      window.__exportMonthFromInput = () => exportLogsExcel("month", (monthEl && monthEl.value) ? monthEl.value : currentMonthKey());
 
-    <div class="divider"></div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>เวลา</th>
-          <th>Action</th>
-          <th>ขา</th>
-          <th>รอบ</th>
-          <th>เส้นทาง</th>
-          <th>ถึง</th>
-          <th>ห้อง</th>
-          <th>คน</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows || `<tr><td colspan="8" class="mini">ยังไม่มี Log</td></tr>`}
-      </tbody>
-    </table>
-
-    <div class="mini">Log เดือนนี้: ${logsMonth.length} รายการ</div>
-  </div>
-</section>`;
-
-      const dayEl = $("expDay");
-      const monthEl = $("expMonth");
-      dayEl.value = todayKey();
-      monthEl.value = currentMonthKey();
-
-      window.__goSchedule = ()=> setHash("/");
-
-      window.__exportDayPicked = async ()=>{
-        const day = dayEl.value || todayKey();
-        const logs = await backend.fetchLogs({ mode:"day", value: day });
-        const html = buildExcelHtml(logs);
-        downloadBlob(`laya-shuttle-logs-${day}.xls`, "application/vnd.ms-excel;charset=utf-8", "\ufeff" + html);
-        toast("Export สำเร็จ", `วัน ${day} • ${logs.length} รายการ`);
-      };
-
-      window.__exportMonthPicked = async ()=>{
-        const mk = monthEl.value || currentMonthKey();
-        const logs = await backend.fetchLogs({ mode:"month", value: mk });
-        const html = buildExcelHtml(logs);
-        downloadBlob(`laya-shuttle-logs-${mk}.xls`, "application/vnd.ms-excel;charset=utf-8", "\ufeff" + html);
-        toast("Export สำเร็จ", `เดือน ${mk} • ${logs.length} รายการ`);
-      };
-
-      window.__exportAll = ()=> exportExcel("all").catch(e=>toast("Export ไม่สำเร็จ", e?.message||String(e)));
+      window.__exportDay = () => exportLogsExcel("day", todayKey());
+      window.__exportMonth = () => exportLogsExcel("month", currentMonthKey());
+      window.__exportAll = () => exportLogsExcel("all");
+      window.__goSchedule = () => setHash("/");
     }
 
-    // ============================
-    // Router
-    // ============================
-    async function render(){
+    function render(){
       const { path, params } = parseHash();
       if(path === "/logs") return viewLogs();
       if(path === "/book"){
         const dir = params.get("dir") || "out";
-        const time = params.get("time") || "";
-        return viewBooking(dir === "back" ? "back" : "out", time);
+        const t = params.get("time") || "";
+        return viewBooking(dir === "back" ? "back" : "out", t);
       }
       return viewSchedule();
     }
 
-    // ============================
-    // Init
-    // ============================
-    async function init(){
-      renderNav("/"); // show header immediately
+    async function boot(){
+      // Try Firebase first; fallback to local on failure.
+      const ok = await initFirebase();
 
-      // Try init selected backend; if Firebase fails, fall back to local
-      if(backend === FirebaseBackend){
-        firebaseReady = await FirebaseBackend.init();
-        if(!firebaseReady){
-          // fall back
-          firebaseReady = false;
+      // Wait a little for first snapshots (so UI doesn't flash empty)
+      if(ok){
+        try{
+          await Promise.race([
+            Promise.all([fbStateReady, fbLogsReady]),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 2500))
+          ]);
+        }catch{
+          // continue anyway
         }
-      }
-
-      if(!FIREBASE_ENABLED || !firebaseReady){
-        await LocalBackend.init();
+      } else {
+        setStatusLine("โหมด Local (ยังไม่ได้เชื่อม Firebase)");
       }
 
       if(!location.hash) location.hash = "#/";
-      window.addEventListener("hashchange", ()=>{ render().catch(console.error); });
-      await render();
+      window.addEventListener("hashchange", render);
+      render();
     }
 
-    // ============================
-    // Basic tests (disabled by default)
-    // ============================
-    function assert(name, cond){ if(!cond) throw new Error("Test failed: " + name); }
-    function runTests(){
-      assert("addMin 11:00+20", addMin("11:00", 20) === "11:20");
-      assert("addMin 11:30+20", addMin("11:30", 20) === "11:50");
-      const d = todayKey();
-      const st = buildDefaultState(d);
-      assert("state has slots", Object.keys(st.slots).length === 16);
-    }
-    // runTests();
-
-    init().catch(e=>{
-      console.error(e);
-      $("subtitle").textContent = "เกิดข้อผิดพลาดในการเริ่มระบบ";
-      toast("Error", e?.message || String(e));
-    });
-  </script>
+    boot();</script>
 </body>
 </html>
