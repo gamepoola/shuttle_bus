@@ -4,102 +4,88 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Laya shuttle bus</title>
-  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAT4AAACfCAMAAABX0UX9AAAAclBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////14gGCAAAAJXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyB2XW8AAAGbSURBVHja7dpxcoMgEIXhR4mO9v9f2J2o1hYpQGmQK4x8uM0T9qkLZz0mI7bqZQAAAAAAAAAAAAAAAAAAAAAAAKBqvHcQqY8e1b7FQJv0wG9w7b8z8cG6YvVn7Q2E0cZ+Xb5Wm8mCk0dSxC6r3q1g7uQ3yZPqgZp9lK9H3qf0gCwYk8n3lQmV8hQ+1Qp9k6q2yqg8y8y6R0mQ4wGQYd9qkK1r3Q8e6uGm0B7qfQ7Jm2p5FzWbJc0jzU4YbqQy3hVg5a0m0j5yqS3qfZc9eX9V7nJ0lZ3Vf5c3z1pY3qXKc0g8m8y2fQxY6b0l9u7S8bT0pQk6c3bZrF9m2uZrYbWJ7g8m0o7cV7cQf8OZ8e6m7KZQw9eQdYc3fQ9Qf9m9V7sV1w0aY2Z1W1qkqg7r6F0mJ0m9o8c3m7f7mO2pG2mXx0r7qvZQAAAAAAAAAAAAAAAAAAAAAAAPw2vQG0mQX9h6FhAAAAAElFTkSuQmCC">
   <style>
     :root{
-      --bg1:#07121f; --bg2:#0b1a2a;
-      --text:#f5f0e6; --muted:#cbbfae;
       --gold:#836A45;
-      --gold2:#B0A390;
-      --ok:#22c55e;
-      --danger:#ff5a5f;
-      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --gold-2:#B0A390;
+      --gold-glow: rgba(131,106,69,.26);
+
+      --bg1:#0c0906;
+      --bg2:#15100a;
+
+      --text:#f6efe6;
+      --muted:#d2c3b2;
       --line: rgba(131,106,69,.22);
-      --yellow:#f2c94c;
+
+      --danger:#ff5a5f;
+      --ok:#40c463;
+
+      --shadow: 0 14px 36px rgba(0,0,0,.45);
     }
 
     *{ box-sizing:border-box; }
+    html, body{ height:100%; }
     body{
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       color:var(--text);
       background:
-        radial-gradient(1200px 800px at 20% 0%, rgba(131,106,69,.14), transparent 60%),
-        radial-gradient(900px 700px at 90% 20%, rgba(176,163,144,.10), transparent 55%),
+        radial-gradient(1100px 760px at 18% 0%, var(--gold-glow), transparent 60%),
+        radial-gradient(900px 700px at 92% 18%, rgba(176,163,144,.14), transparent 55%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
       min-height:100vh;
     }
 
+    .wrap{ max-width: 1120px; margin: 0 auto; padding: 18px; }
+
     header{
       position: sticky; top: 0;
       backdrop-filter: blur(10px);
-      background: rgba(7,18,31,.65);
+      background: rgba(12,9,6,.62);
       border-bottom: 1px solid var(--line);
       z-index: 10;
     }
 
-    .wrap{ max-width: 1120px; margin: 0 auto; padding: 18px; }
-
-    .brand{ display:flex; align-items:center; justify-content:space-between; gap: 12px; padding: 14px 18px; }
-    .brand-left{ display:flex; align-items:center; gap:12px; min-width:0; }
-
-    .mark{
-      width: 46px; height: 46px; border-radius: 16px;
-      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.14), transparent 55%),
-                  linear-gradient(135deg, rgba(131,106,69,.38), rgba(131,106,69,.08));
-      border: 1px solid rgba(131,106,69,.35);
-      box-shadow: var(--shadow);
-      display:grid; place-items:center;
-      font-weight: 900;
-      color: var(--gold2);
-      letter-spacing: .5px;
-      font-size: 18px;
-      flex: 0 0 auto;
-    }
-
+    .brand{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 14px 18px; }
+    .brand-left{ display:flex; align-items:center; gap:14px; min-width:0; }
+    .logo{ height: 44px; width:auto; display:block; filter: drop-shadow(0 10px 18px rgba(0,0,0,.35)); }
     h1{ margin:0; font-size: 20px; letter-spacing: .6px; }
-    .sub{ margin:2px 0 0 0; color: var(--muted); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70vw; }
+    .sub{ margin:2px 0 0 0; color: var(--muted); font-size: 13.5px; }
 
     .nav{ display:flex; gap: 10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
     .chip{
       padding: 9px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(131,106,69,.22);
-      background: rgba(15,36,56,.35);
+      border: 1px solid var(--line);
+      background: rgba(18,13,8,.55);
       color: var(--text);
       font-size: 14px;
       font-weight: 650;
       cursor:pointer;
       user-select:none;
-      text-decoration:none;
-      display:inline-block;
     }
-    .chip.active{ border-color: rgba(131,106,69,.55); background: rgba(131,106,69,.14); color: var(--gold2); }
+    .chip.active{ border-color: rgba(131,106,69,.55); background: rgba(131,106,69,.14); color: var(--gold-2); }
 
     .card{
-      background: linear-gradient(180deg, rgba(15,36,56,.78), rgba(12,29,47,.72));
-      border: 1px solid rgba(131,106,69,.18);
+      background: linear-gradient(180deg, rgba(18,13,8,.82), rgba(14,10,6,.74));
+      border: 1px solid var(--line);
       border-radius: 20px;
       box-shadow: var(--shadow);
       overflow:hidden;
     }
-
     .card-h{
       padding: 16px 16px 12px 16px;
       border-bottom: 1px solid rgba(131,106,69,.16);
       display:flex; align-items:flex-end; justify-content:space-between; gap: 12px;
-      flex-wrap:wrap;
     }
-
     .card-h h2{ margin:0; font-size: 17px; letter-spacing:.4px; }
     .card-h .hint{ margin:4px 0 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
-
     .card-b{ padding: 14px 16px 16px 16px; }
 
     .grid{ display:grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 980px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
+    @media (min-width: 940px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
 
-    .slots{ display:grid; grid-template-columns: 1fr; gap: 12px; }
+    .slots{ display:grid; grid-template-columns: 1fr; gap: 10px; }
     @media (min-width: 640px){ .slots{ grid-template-columns: 1fr 1fr; } }
 
     .slot{
@@ -107,27 +93,19 @@
       padding: 14px;
       border-radius: 18px;
       border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.35);
+      background: rgba(12,9,6,.35);
     }
+    .slot .meta{ display:flex; flex-direction:column; gap: 6px; min-width: 0; }
     .slot .time{ font-size: 22px; font-weight: 900; letter-spacing:.3px; }
     .slot .seat{ font-size: 15.5px; color: var(--muted); }
-    .slot .seat b{ font-size: 20px; color: var(--ok); }
-    .slot .seat b.danger{ color: var(--danger); }
-    .slot .meta{ display:flex; flex-direction:column; gap: 6px; min-width:0; }
-
-    .badge{
-      display:inline-flex; align-items:center; gap: 8px;
-      padding: 8px 11px; border-radius: 999px;
-      background: rgba(131,106,69,.10);
-      border: 1px solid rgba(131,106,69,.20);
-      color: var(--muted); font-size: 13.5px; font-weight: 650;
-    }
-    .dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
+    .slot .seat b{ font-size: 20px; color: var(--gold-2); }
+    .slot .route{ font-size: 12.8px; color: rgba(210,195,178,.92); line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 560px; }
 
     .btn{
-      appearance:none; border: 1px solid rgba(131,106,69,.35);
-      background: rgba(131,106,69,.14);
-      color: var(--gold2);
+      appearance:none;
+      border: 1px solid rgba(131,106,69,.35);
+      background: rgba(131,106,69,.12);
+      color: var(--gold-2);
       padding: 11px 14px;
       border-radius: 16px;
       font-weight: 850;
@@ -142,23 +120,19 @@
     .btn:hover{ border-color: rgba(131,106,69,.6); background: rgba(131,106,69,.18); }
     .btn:active{ transform: translateY(1px); }
     .btn:disabled{ opacity: .55; cursor:not-allowed; transform:none; }
-
-    .btn.primary{ background: linear-gradient(135deg, rgba(131,106,69,.22), rgba(131,106,69,.12)); border-color: rgba(131,106,69,.55); color: var(--text); }
-    /* ✅ Yellow for “เลือก” button on schedule */
-    .btn.pick{
-      background: linear-gradient(135deg, rgba(242,201,76,.95), rgba(242,201,76,.60));
-      border-color: rgba(242,201,76,.85);
-      color: #0b1a2a;
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(131,106,69,.22), rgba(131,106,69,.10));
+      border-color: rgba(131,106,69,.55);
+      color: var(--text);
     }
-    .btn.pick:hover{
-      background: linear-gradient(135deg, rgba(242,201,76,1), rgba(242,201,76,.70));
-      border-color: rgba(242,201,76,1);
+    .btn.ghost{
+      background: rgba(18,13,8,.50);
+      border-color: rgba(131,106,69,.22);
+      color: var(--text);
     }
-
     .btn.danger{ background: rgba(255,90,95,.10); border-color: rgba(255,90,95,.45); color: #ffb0b3; }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-start; }
-
     .field{ display:flex; flex-direction:column; gap:6px; width: 100%; }
     label{ color: var(--muted); font-size: 13.5px; font-weight: 650; }
     input, select{
@@ -166,23 +140,23 @@
       padding: 13px 12px;
       border-radius: 16px;
       border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.35);
+      background: rgba(12,9,6,.35);
       color: var(--text);
       outline:none;
-      font-size: 17px;
+      font-size: 16.5px;
       font-weight: 650;
     }
     select{ cursor:pointer; }
-    input:focus, select:focus{ border-color: rgba(131,106,69,.55); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
+    input:focus, select:focus{ border-color: rgba(131,106,69,.55); box-shadow: 0 0 0 4px rgba(131,106,69,.14); }
 
     .kpi{
       display:flex; flex-direction:column; gap: 8px;
       padding: 12px;
       border-radius: 18px;
       border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.35);
+      background: rgba(12,9,6,.35);
     }
-    .kpi .big{ font-size: 30px; font-weight: 950; letter-spacing:.2px; color: var(--gold2); }
+    .kpi .big{ font-size: 30px; font-weight: 950; letter-spacing:.2px; color: var(--gold-2); }
     .kpi .small{ color: var(--muted); font-size: 13.5px; line-height: 1.55; }
 
     .mini{
@@ -194,34 +168,18 @@
       line-height: 1.65;
     }
 
-    .divider{ height:1px; background: rgba(131,106,69,.16); margin: 12px 0; }
-
-    table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 18px; border: 1px solid rgba(131,106,69,.18); background: rgba(7,18,31,.25); }
-    th, td{ padding: 11px 11px; font-size: 13px; border-bottom: 1px solid rgba(131,106,69,.14); text-align:left; }
-    th{ color: var(--muted); font-weight: 800; }
-    tr:last-child td{ border-bottom:none; }
-
-    .barwrap{ display:grid; gap: 8px; }
-    .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(7,18,31,.25); }
-    .bar .lbl{ width: 66px; color: var(--muted); font-size: 13.5px; font-weight: 700; }
-    .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.10); overflow:hidden; }
-    .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.60), rgba(176,163,144,.22)); }
-    .bar .num{ width: 62px; text-align:right; color: var(--gold2); font-weight: 900; font-size: 13.5px; }
-
-    .footer-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
-
     .toast{
       position: fixed;
       left: 50%;
       bottom: 18px;
       transform: translateX(-50%);
-      background: rgba(7,18,31,.88);
+      background: rgba(12,9,6,.92);
       border: 1px solid rgba(131,106,69,.25);
       box-shadow: var(--shadow);
       padding: 12px 14px;
       border-radius: 18px;
       max-width: 92vw;
-      width: 620px;
+      width: 640px;
       display:none;
       z-index: 30;
     }
@@ -230,28 +188,48 @@
     .toast .t{ font-weight: 900; color: var(--text); font-size: 15.5px; }
     .toast .d{ color: var(--muted); font-size: 13.5px; margin-top: 4px; line-height: 1.5; }
 
+    table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 18px; border: 1px solid rgba(131,106,69,.18); background: rgba(12,9,6,.25); }
+    th, td{ padding: 11px 11px; font-size: 13px; border-bottom: 1px solid rgba(131,106,69,.14); text-align:left; }
+    th{ color: var(--muted); font-weight: 800; }
+    tr:last-child td{ border-bottom:none; }
+
+    .barwrap{ display:grid; gap: 8px; }
+    .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(12,9,6,.25); }
+    .bar .lbl{ width: 110px; color: var(--muted); font-size: 13.5px; font-weight: 700; }
+    .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.12); overflow:hidden; }
+    .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.70), rgba(176,163,144,.35)); }
+    .bar .num{ width: 62px; text-align:right; color: var(--gold-2); font-weight: 900; font-size: 13.5px; }
+
+    .footer-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
+
+    .pill{ display:inline-flex; align-items:center; gap: 8px; padding: 8px 11px; border-radius: 999px; background: rgba(131,106,69,.10); border: 1px solid rgba(131,106,69,.20); color: var(--muted); font-size: 13.5px; font-weight: 650; }
+    .dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
+
+    .danger-text{ color: #ffb0b3; }
+    .ok-text{ color: #a8f0b8; }
+
+    .divider{ height:1px; background: rgba(131,106,69,.16); margin: 12px 0; }
+
     .note{
       margin-top: 10px;
       padding: 10px 12px;
       border-radius: 16px;
       border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.25);
+      background: rgba(12,9,6,.25);
       color: var(--muted);
       font-size: 13.5px;
       line-height: 1.6;
     }
-
-    .danger-text{ color: #ffb0b3; }
   </style>
 </head>
 <body>
   <header>
     <div class="wrap brand">
       <div class="brand-left">
-        <div class="mark">L</div>
+        <img class="logo" alt="Laya Resort Phuket" src="data:image/png;base64,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" />
         <div style="min-width:0">
           <h1>Laya shuttle bus</h1>
-          <p class="sub" id="statusLine">กำลังเชื่อมต่อ Firebase…</p>
+          <p class="sub">เลือก ขาไป/ขากลับ → เลือกรอบเวลา → เลือกจุดหมาย/จุดรับ → ระบบบอกเวลาถึง</p>
         </div>
       </div>
       <nav class="nav" id="nav"></nav>
@@ -265,1170 +243,1077 @@
     <div class="d" id="toastDesc"></div>
   </div>
 
-
-  <!-- Firebase (Compat) - works on GitHub Pages without build tools -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
-
   <script>
-    const CAPACITY_PER_TRIP = 20;
+(function() {
+  'use strict';
 
-    const LS_STATE = "laya_shuttle_state_v4";
-    const LS_LOGS  = "laya_shuttle_logs_v4";
-    const LS_UI    = "laya_shuttle_ui_v4";
+  // ============================
+  // CONFIG
+  // ============================
+  var CAPACITY_PER_TRIP = 20;
 
-    // ============================
-    // FIREBASE (Firestore + Anonymous Auth)
-    // ============================
-    // เปิด/ปิดการใช้ Firebase
-    const USE_FIREBASE = true;
+  // Firebase config (provided by user)
+  var FIREBASE_CONFIG = {"apiKey": "AIzaSyCql94D9FWgX4VIT5N1URKQDZ6IIyFGXys", "authDomain": "shuttle-bus-dd8e0.firebaseapp.com", "projectId": "shuttle-bus-dd8e0", "storageBucket": "shuttle-bus-dd8e0.firebasestorage.app", "messagingSenderId": "1097750801622", "appId": "1:1097750801622:web:7ed78fca83999be34ced77", "measurementId": "G-WTJP6RW7R8"};
 
-    // ✅ Firebase config (จาก Firebase Console ของคุณ)
-    const firebaseConfig = {
-      apiKey: "AIzaSyCql94D9FWgX4VIT5N1URKQDZ6IIyFGXys",
-      authDomain: "shuttle-bus-dd8e0.firebaseapp.com",
-      projectId: "shuttle-bus-dd8e0",
-      storageBucket: "shuttle-bus-dd8e0.firebasestorage.app",
-      messagingSenderId: "1097750801622",
-      appId: "1:1097750801622:web:7ed78fca83999be34ced77",
-      measurementId: "G-WTJP6RW7R8"
-    };
+  // LocalStorage keys (fallback)
+  var LS_STATE = 'laya_bus_state_local_v1';
+  var LS_LOGS  = 'laya_bus_logs_local_v1';
+  var LS_UI    = 'laya_bus_ui_v1';
 
-    const FB = {
-      enabled: USE_FIREBASE,
-      ready: false,
-      app: null,
-      db: null,
-      uid: null,
-      stateUnsub: null,
-      logsUnsub: null,
-    };
+  // Firestore collection names (match your console screenshot)
+  var COL_SLOTS = 'slots';
+  var COL_LOGS  = 'logs';
+  var COL_STATS = 'stats';
 
-    let STATE_CACHE = null;
-    let LOGS_CACHE = [];
+  // Firebase module version (CDN)
+  var FB_VER = '10.12.5';
 
-    let _fbStateReadyResolve;
-    let _fbLogsReadyResolve;
-    const fbStateReady = new Promise((res) => (_fbStateReadyResolve = res));
-    const fbLogsReady  = new Promise((res) => (_fbLogsReadyResolve  = res));
+  // ============================
+  // Schedule
+  // ============================
+  var DIRS = {
+    out: {
+      key: 'out',
+      label: 'ขาไป',
+      baseTimes: ['11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'],
+      timeline: [
+        { key:'HOTEL', name:'Hotel', off: 0 },
+        { key:'LAYAN', name:'Layan National Park', off: 5 },
+        { key:'LEPHANG', name:'Le Phang Beach', off: 10 },
+        { key:'BOAT', name:'Boat Avenue', off: 20 }
+      ],
+      selectLabel: 'จุดหมายปลายทาง',
+      selectable: [
+        { key:'LAYAN', name:'Layan National Park' },
+        { key:'LEPHANG', name:'Le Phang Beach' },
+        { key:'BOAT', name:'Boat Avenue' }
+      ]
+    },
+    back: {
+      key: 'back',
+      label: 'ขากลับ',
+      baseTimes: ['11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30'],
+      timeline: [
+        { key:'BOAT', name:'Boat Avenue', off: 0 },
+        { key:'LEPHANG', name:'Le Phang Beach', off: 10 },
+        { key:'LAYAN', name:'Layan National Park', off: 15 },
+        { key:'HOTEL', name:'Hotel', off: 20 }
+      ],
+      selectLabel: 'จุดรับขึ้นรถ',
+      selectable: [
+        { key:'BOAT', name:'Boat Avenue' },
+        { key:'LEPHANG', name:'Le Phang Beach' },
+        { key:'LAYAN', name:'Layan National Park' }
+      ]
+    }
+  };
 
-    function setStatusLine(text){
-      const el = document.getElementById("statusLine");
-      if(el) el.textContent = text;
+  // ============================
+  // Utils
+  // ============================
+  function pad2(n) { return String(n).padStart(2,'0'); }
+  function timeToMin(t) {
+    var p = String(t).split(':'); return (parseInt(p[0],10)*60) + parseInt(p[1],10);
+  }
+  function minToTime(min) {
+    min = ((min % (24*60)) + (24*60)) % (24*60);
+    var h = Math.floor(min/60); var m = min%60;
+    return pad2(h)+':'+pad2(m);
+  }
+  function addMin(t, delta) { return minToTime(timeToMin(t) + delta); }
+
+  function todayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+  }
+  function monthKeyFromDateStr(dateStr) {
+    if(!dateStr) return '';
+    return String(dateStr).slice(0,7);
+  }
+  function currentMonthKey() {
+    return monthKeyFromDateStr(todayKey());
+  }
+  function nowMin() {
+    var d = new Date();
+    return d.getHours()*60 + d.getMinutes();
+  }
+  function isClosedToday(baseTime) { return nowMin() >= timeToMin(baseTime); }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#039;");
+  }
+
+  function toast(title, desc) {
+    desc = desc || '';
+    var el = document.getElementById('toast');
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastDesc').textContent = desc;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ el.classList.remove('show'); }, 2600);
+  }
+
+  function parseHash() {
+    var raw = location.hash || '#/';
+    var parts = raw.replace(/^#/, '').split('?');
+    var path = parts[0];
+    var params = new URLSearchParams(parts[1] || '');
+    return { path: path, params: params };
+  }
+  function setHash(path) { location.hash = '#'+path; }
+
+  function downloadBlob(filename, mime, content) {
+    var blob = new Blob([content], { type: mime });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function safeKey(s) {
+    // Firestore field path safety (avoid '.', '#', '$', '/', '[', ']')
+    return String(s || '').replace(/[.#$\/\[\]]/g, '_');
+  }
+
+  function timeKey(t) { return 't' + String(t).replace(':',''); }
+
+  function slotDocId(dateStr, dirKey, baseTime) {
+    return dateStr + '_' + dirKey + '_' + String(baseTime).replace(':','');
+  }
+
+  function calcTimes(dirKey, baseTime, placeKey) {
+    var dir = DIRS[dirKey];
+    if(!dir || !placeKey) return null;
+
+    if(dirKey === 'out') {
+      var dest = dir.timeline.find(function(x){ return x.key === placeKey; });
+      if(!dest) return null;
+      return {
+        pickup: 'Hotel',
+        destination: dest.name,
+        pickupTime: baseTime,
+        arriveTime: addMin(baseTime, dest.off)
+      };
     }
 
-    function stateDocRef(date){ return FB.db.collection("shuttle_state").doc(date); }
-    function logsColRef(){ return FB.db.collection("shuttle_logs"); }
+    // back
+    var pickupStop = dir.timeline.find(function(x){ return x.key === placeKey; });
+    var hotelStop = dir.timeline.find(function(x){ return x.key === 'HOTEL'; });
+    if(!pickupStop || !hotelStop) return null;
 
-    function normalizeState(data){
-      const base = buildDefaultState();
-      if(!data || typeof data !== "object") return base;
-      if(data.date !== base.date) return base;
+    return {
+      pickup: pickupStop.name,
+      destination: 'Hotel',
+      pickupTime: addMin(baseTime, pickupStop.off),
+      arriveTime: addMin(baseTime, hotelStop.off)
+    };
+  }
 
-      const merged = { ...base, ...data, slots: { ...base.slots, ...(data.slots || {}) } };
-      for(const id of Object.keys(base.slots)){
-        const s = merged.slots[id];
-        if(!s || typeof s.available !== "number") merged.slots[id] = base.slots[id];
-        if(!merged.slots[id].bookings) merged.slots[id].bookings = {};
-        if(!merged.slots[id].capacity) merged.slots[id].capacity = CAPACITY_PER_TRIP;
-        merged.slots[id].available = Math.max(0, Math.min(merged.slots[id].capacity, merged.slots[id].available));
-      }
+  // ============================
+  // Local fallback store
+  // ============================
+  function buildDefaultLocalState() {
+    var date = todayKey();
+    var slots = {};
+    Object.keys(DIRS).forEach(function(dirKey){
+      DIRS[dirKey].baseTimes.forEach(function(t){
+        var id = slotDocId(date, dirKey, t);
+        slots[id] = { date: date, dir: dirKey, time: t, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+      });
+    });
+    return { date: date, slots: slots };
+  }
+
+  function loadLocalState() {
+    try {
+      var base = buildDefaultLocalState();
+      var raw = localStorage.getItem(LS_STATE);
+      if(!raw) return base;
+      var parsed = JSON.parse(raw);
+      if(!parsed || parsed.date !== base.date) return base;
+      var merged = { date: base.date, slots: Object.assign({}, base.slots, parsed.slots || {}) };
       return merged;
+    } catch(e) {
+      return buildDefaultLocalState();
     }
+  }
+  function saveLocalState(st) {
+    localStorage.setItem(LS_STATE, JSON.stringify(st));
+  }
 
-    async function initFirebase(){
-      if(!FB.enabled){
-        setStatusLine("โหมด Local (ไม่ใช้ Firebase)");
-        return false;
-      }
-      if(typeof firebase === "undefined"){
-        setStatusLine("Firebase SDK ไม่โหลด (ใช้ Local แทน)");
-        FB.enabled = false;
-        return false;
-      }
+  function loadLocalLogs() {
+    try {
+      var raw = localStorage.getItem(LS_LOGS);
+      if(!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch(e) { return []; }
+  }
+  function addLocalLog(entry) {
+    var logs = loadLocalLogs();
+    logs.unshift(entry);
+    localStorage.setItem(LS_LOGS, JSON.stringify(logs));
+  }
 
-      try{
-        FB.app = (firebase.apps && firebase.apps.length) ? firebase.app() : firebase.initializeApp(firebaseConfig);
-        FB.db = firebase.firestore();
+  // ============================
+  // Storage abstraction (Firebase preferred, local fallback)
+  // ============================
+  var storage = (function(){
+    var mode = 'local';
+    var fb = null; // { db, auth, fs }
 
-        await firebase.auth().signInAnonymously();
-        FB.uid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
+    function getMode() { return mode; }
 
-        FB.ready = true;
-        setStatusLine("Firebase: เชื่อมต่อแล้ว");
+    async function initFirebase() {
+      try {
+        var modApp = await import('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-app.js');
+        var modAuth = await import('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-auth.js');
+        var modFs = await import('https://www.gstatic.com/firebasejs/' + FB_VER + '/firebase-firestore.js');
 
-        attachFirebaseListeners();
+        var app = modApp.initializeApp(FIREBASE_CONFIG);
+        var auth = modAuth.getAuth(app);
+
+        await modAuth.signInAnonymously(auth);
+
+        var db = modFs.getFirestore(app);
+
+        fb = { db: db, auth: auth, fs: modFs };
+        mode = 'firebase';
         return true;
-      }catch(err){
-        console.error("Firebase init failed", err);
-        setStatusLine("เชื่อม Firebase ไม่ได้ (ใช้ Local แทน)");
-        FB.enabled = false;
-        FB.ready = false;
+      } catch(e) {
+        mode = 'local';
+        fb = null;
+        console.warn('Firebase init failed, fallback to local:', e);
+        toast('Firebase ใช้งานไม่ได้', 'สลับเป็นโหมด Local ชั่วคราว');
         return false;
       }
     }
 
-    function attachFirebaseListeners(){
-      if(!FB.ready) return;
-
-      // unsubscribe old listeners
-      try{ if(FB.stateUnsub) FB.stateUnsub(); }catch{}
-      try{ if(FB.logsUnsub) FB.logsUnsub(); }catch{}
-
-      const date = todayKey();
-      const ref = stateDocRef(date);
-
-      // State snapshot
-      let firstState = true;
-      FB.stateUnsub = ref.onSnapshot(async (snap) => {
-        if(!snap.exists){
-          const base = buildDefaultState();
-          try{ await ref.set(base, { merge: false }); }catch(e){ console.error("Create state doc failed", e); }
-          STATE_CACHE = base;
-        }else{
-          STATE_CACHE = normalizeState(snap.data());
-        }
-
-        if(firstState){
-          firstState = false;
-          if(_fbStateReadyResolve) _fbStateReadyResolve(true);
-        }
-
-        // update UI
-        render();
-      }, (err)=>{
-        console.error("State snapshot error", err);
-        setStatusLine("Firebase state error (ใช้ Local แทน)");
-        FB.enabled = false;
-        FB.ready = false;
-      });
-
-      // Logs snapshot (recent only) for stats/UI
-      let firstLogs = true;
-      FB.logsUnsub = logsColRef().orderBy("tsMs","desc").limit(3000).onSnapshot((qs) => {
-        const arr = [];
-        qs.forEach((doc) => arr.push(doc.data()));
-        LOGS_CACHE = arr;
-
-        if(firstLogs){
-          firstLogs = false;
-          if(_fbLogsReadyResolve) _fbLogsReadyResolve(true);
-        }
-
-        const { path } = parseHash();
-        if(path === "/logs" || path === "/") render();
-      }, (err)=>{
-        console.error("Logs snapshot error", err);
-      });
+    function isQuotaError(e) {
+      var msg = (e && e.message) ? String(e.message) : '';
+      var code = (e && e.code) ? String(e.code) : '';
+      return code === 'resource-exhausted' || msg.includes('Quota') || msg.includes('resource-exhausted') || msg.includes('429');
     }
 
-    const DIRS = {
-      out: {
-        key: "out",
-        label: "ขาไป",
-        baseTimes: ["11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"],
-        timeline: [
-          { key:"HOTEL", name:"Hotel", offset: 0 },
-          { key:"LAYAN", name:"Layan National Park", offset: 5 },
-          { key:"LEPHANG", name:"Le Phang Beach", offset: 10 },
-          { key:"BOAT", name:"Boat Avenue", offset: 20 },
-        ],
-        selectLabel: "จุดหมายปลายทาง",
-        selectable: [
-          { key:"LAYAN", name:"Layan National Park" },
-          { key:"LEPHANG", name:"Le Phang Beach" },
-          { key:"BOAT", name:"Boat Avenue" },
-        ],
-      },
-      back: {
-        key: "back",
-        label: "ขากลับ",
-        baseTimes: ["11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30"],
-        timeline: [
-          { key:"BOAT", name:"Boat Avenue", offset: 0 },
-          { key:"LEPHANG", name:"Le Phang Beach", offset: 10 },
-          { key:"LAYAN", name:"Layan National Park", offset: 15 },
-          { key:"HOTEL", name:"Hotel", offset: 20 },
-        ],
-        selectLabel: "จุดรับขึ้นรถ",
-        selectable: [
-          { key:"BOAT", name:"Boat Avenue" },
-          { key:"LEPHANG", name:"Le Phang Beach" },
-          { key:"LAYAN", name:"Layan National Park" },
-        ],
+    async function getSlot(dateStr, dirKey, timeStr) {
+      var id = slotDocId(dateStr, dirKey, timeStr);
+
+      if(mode !== 'firebase') {
+        var st = loadLocalState();
+        var slot = st.slots[id];
+        if(!slot) {
+          slot = { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+          st.slots[id] = slot;
+          saveLocalState(st);
+        }
+        return JSON.parse(JSON.stringify(slot));
       }
+
+      try {
+        var fs = fb.fs;
+        var ref = fs.doc(fb.db, COL_SLOTS, id);
+        var snap = await fs.getDoc(ref);
+        if(!snap.exists()) {
+          var def = { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {}, updatedAt: fs.serverTimestamp() };
+          await fs.setDoc(ref, def, { merge: true });
+          def.updatedAt = null;
+          return def;
+        }
+        return Object.assign({}, snap.data());
+      } catch(e) {
+        console.error(e);
+        if(isQuotaError(e)) {
+          mode = 'local';
+          toast('Quota Firebase เต็ม', 'สลับเป็น Local ชั่วคราว');
+          return getSlot(dateStr, dirKey, timeStr);
+        }
+        throw e;
+      }
+    }
+
+    async function listSlots(dateStr, dirKey) {
+      var times = DIRS[dirKey].baseTimes.slice();
+      var out = [];
+      for(var i=0;i<times.length;i++) {
+        var t = times[i];
+        var s = await getSlot(dateStr, dirKey, t);
+        out.push({ time: t, capacity: s.capacity || CAPACITY_PER_TRIP, available: (typeof s.available==='number'? s.available : CAPACITY_PER_TRIP) });
+      }
+      return out;
+    }
+
+    async function book(dateStr, dirKey, timeStr, roomRaw, pax, placeKey, timesInfo) {
+      var room = String(roomRaw || '').trim();
+      if(!room) return { ok:false, msg:'กรุณาใส่เลขห้อง' };
+      var roomK = safeKey(room);
+
+      if(mode !== 'firebase') {
+        var st = loadLocalState();
+        var id = slotDocId(dateStr, dirKey, timeStr);
+        var slot = st.slots[id] || { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+        if(slot.bookings[roomK] && slot.bookings[roomK].pax > 0) return { ok:false, msg:'ห้องนี้จองแล้ว (กันการกดซ้ำ)' };
+        if(pax > slot.available) return { ok:false, msg:'ที่นั่งไม่พอ' };
+        slot.bookings[roomK] = {
+          room: room, pax: pax, placeKey: placeKey,
+          pickup: timesInfo.pickup, destination: timesInfo.destination,
+          pickupTime: timesInfo.pickupTime, arriveTime: timesInfo.arriveTime,
+          tsMs: Date.now()
+        };
+        slot.available -= pax;
+        st.slots[id] = slot;
+        saveLocalState(st);
+        addLocalLog({ action:'BOOK', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, tsMs: Date.now() });
+        return { ok:true };
+      }
+
+      try {
+        var fs = fb.fs;
+        var db = fb.db;
+        var slotId = slotDocId(dateStr, dirKey, timeStr);
+        var slotRef = fs.doc(db, COL_SLOTS, slotId);
+
+        var monthKey = monthKeyFromDateStr(dateStr);
+        var statsRef = fs.doc(db, COL_STATS, monthKey);
+        var logRef = fs.doc(fs.collection(db, COL_LOGS)); // auto-id
+
+        await fs.runTransaction(db, async function(tx){
+          var snap = await tx.get(slotRef);
+          var data;
+          if(!snap.exists()) {
+            data = { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+            tx.set(slotRef, Object.assign({}, data, { updatedAt: fs.serverTimestamp() }), { merge: true });
+          } else {
+            data = snap.data();
+          }
+
+          var capacity = (typeof data.capacity==='number') ? data.capacity : CAPACITY_PER_TRIP;
+          var available = (typeof data.available==='number') ? data.available : capacity;
+          var bookings = data.bookings || {};
+
+          var existing = bookings[roomK];
+          if(existing && existing.pax > 0) throw new Error('ห้องนี้จองแล้ว (กันการกดซ้ำ)');
+          if(pax > available) throw new Error('ที่นั่งไม่พอ');
+
+          var bookingObj = {
+            room: room, pax: pax, placeKey: placeKey,
+            pickup: timesInfo.pickup, destination: timesInfo.destination,
+            pickupTime: timesInfo.pickupTime, arriveTime: timesInfo.arriveTime,
+            tsMs: Date.now()
+          };
+
+          var upd = {};
+          upd.available = available - pax;
+          upd.updatedAt = fs.serverTimestamp();
+          upd['bookings.' + roomK] = bookingObj;
+          tx.set(slotRef, upd, { merge: true });
+
+          var statField = dirKey + '.' + timeKey(timeStr);
+          var statUpd = {}; statUpd[statField] = fs.increment(pax); statUpd.updatedAt = fs.serverTimestamp();
+          tx.set(statsRef, statUpd, { merge: true });
+
+          tx.set(logRef, {
+            action: 'BOOK', pax: pax, room: room, time: timeStr, dir: dirKey,
+            date: dateStr, month: monthKey,
+            placeKey: placeKey,
+            pickup: timesInfo.pickup, destination: timesInfo.destination,
+            pickupTime: timesInfo.pickupTime, arriveTime: timesInfo.arriveTime,
+            tsMs: Date.now(),
+            ts: fs.serverTimestamp()
+          });
+        });
+
+        return { ok:true };
+      } catch(e) {
+        console.error(e);
+        if(isQuotaError(e)) {
+          mode = 'local';
+          toast('Quota Firebase เต็ม', 'สลับเป็น Local ชั่วคราว');
+          return book(dateStr, dirKey, timeStr, roomRaw, pax, placeKey, timesInfo);
+        }
+        return { ok:false, msg: (e && e.message) ? e.message : 'จองไม่สำเร็จ' };
+      }
+    }
+
+    async function cancel(dateStr, dirKey, timeStr, roomRaw, pax) {
+      var room = String(roomRaw || '').trim();
+      if(!room) return { ok:false, msg:'กรุณาใส่เลขห้อง' };
+      var roomK = safeKey(room);
+
+      if(mode !== 'firebase') {
+        var st = loadLocalState();
+        var id = slotDocId(dateStr, dirKey, timeStr);
+        var slot = st.slots[id];
+        if(!slot) return { ok:false, msg:'ไม่พบรอบเวลานี้' };
+        var existing = slot.bookings[roomK];
+        var booked = existing ? (existing.pax || 0) : 0;
+        if(booked <= 0) return { ok:false, msg:'ห้องนี้ยังไม่มีการจองในรอบนี้' };
+        if(pax > booked) return { ok:false, msg:'ยกเลิกเกินจำนวนที่จองไว้' };
+        var left = booked - pax;
+        if(left === 0) delete slot.bookings[roomK];
+        else slot.bookings[roomK].pax = left;
+        slot.available = Math.min(slot.capacity || CAPACITY_PER_TRIP, (slot.available || 0) + pax);
+        saveLocalState(st);
+        addLocalLog({ action:'CANCEL', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, tsMs: Date.now() });
+        return { ok:true };
+      }
+
+      try {
+        var fs = fb.fs;
+        var db = fb.db;
+        var slotId = slotDocId(dateStr, dirKey, timeStr);
+        var slotRef = fs.doc(db, COL_SLOTS, slotId);
+        var monthKey = monthKeyFromDateStr(dateStr);
+        var logRef = fs.doc(fs.collection(db, COL_LOGS));
+
+        await fs.runTransaction(db, async function(tx){
+          var snap = await tx.get(slotRef);
+          if(!snap.exists()) throw new Error('ไม่พบรอบเวลานี้');
+          var data = snap.data();
+          var capacity = (typeof data.capacity==='number') ? data.capacity : CAPACITY_PER_TRIP;
+          var available = (typeof data.available==='number') ? data.available : capacity;
+          var bookings = data.bookings || {};
+          var existing = bookings[roomK];
+          var booked = existing ? (existing.pax || 0) : 0;
+          if(booked <= 0) throw new Error('ห้องนี้ยังไม่มีการจองในรอบนี้');
+          if(pax > booked) throw new Error('ยกเลิกเกินจำนวนที่จองไว้');
+
+          var left = booked - pax;
+          var upd = {};
+          upd.available = Math.min(capacity, available + pax);
+          upd.updatedAt = fs.serverTimestamp();
+          if(left === 0) upd['bookings.'+roomK] = fs.deleteField();
+          else upd['bookings.'+roomK+'.pax'] = left;
+          tx.set(slotRef, upd, { merge:true });
+
+          tx.set(logRef, {
+            action: 'CANCEL',
+            pax: pax,
+            room: room,
+            time: timeStr,
+            dir: dirKey,
+            date: dateStr,
+            month: monthKey,
+            tsMs: Date.now(),
+            ts: fs.serverTimestamp()
+          });
+        });
+
+        return { ok:true };
+      } catch(e) {
+        console.error(e);
+        if(isQuotaError(e)) {
+          mode = 'local';
+          toast('Quota Firebase เต็ม', 'สลับเป็น Local ชั่วคราว');
+          return cancel(dateStr, dirKey, timeStr, roomRaw, pax);
+        }
+        return { ok:false, msg: (e && e.message) ? e.message : 'ยกเลิกไม่สำเร็จ' };
+      }
+    }
+
+    async function getStatsMonth(monthKey) {
+      if(mode !== 'firebase') {
+        var logs = loadLocalLogs();
+        var out = { out: {}, back: {} };
+        Object.keys(DIRS).forEach(function(dk){
+          DIRS[dk].baseTimes.forEach(function(t){ out[dk][timeKey(t)] = 0; });
+        });
+        logs.forEach(function(e){
+          if(!e || e.action !== 'BOOK') return;
+          if(monthKeyFromDateStr(e.date) !== monthKey) return;
+          if(out[e.dir] && out[e.dir][timeKey(e.time)] !== undefined) out[e.dir][timeKey(e.time)] += (e.pax||0);
+        });
+        return out;
+      }
+
+      try {
+        var fs = fb.fs;
+        var ref = fs.doc(fb.db, COL_STATS, monthKey);
+        var snap = await fs.getDoc(ref);
+        if(!snap.exists()) return { out:{}, back:{} };
+        var data = snap.data() || {};
+        return { out: data.out || {}, back: data.back || {} };
+      } catch(e) {
+        console.error(e);
+        if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return getStatsMonth(monthKey); }
+        return { out:{}, back:{} };
+      }
+    }
+
+    function rangeMsForDay(dateStr) {
+      var parts = String(dateStr).split('-');
+      var y = parseInt(parts[0],10); var m = parseInt(parts[1],10)-1; var d = parseInt(parts[2],10);
+      var start = new Date(y,m,d,0,0,0,0).getTime();
+      var end = new Date(y,m,d+1,0,0,0,0).getTime();
+      return { start:start, end:end };
+    }
+    function rangeMsForMonth(monthStr) {
+      var parts = String(monthStr).split('-');
+      var y = parseInt(parts[0],10); var m = parseInt(parts[1],10)-1;
+      var start = new Date(y,m,1,0,0,0,0).getTime();
+      var end = new Date(y,m+1,1,0,0,0,0).getTime();
+      return { start:start, end:end };
+    }
+
+    async function queryLogs(opts) {
+      opts = opts || {};
+      var modeQ = opts.mode || 'all';
+      var limitN = opts.limit || 250;
+      if(limitN < 1) limitN = 250;
+
+      if(mode !== 'firebase') {
+        var logs = loadLocalLogs();
+        if(modeQ === 'day') logs = logs.filter(function(e){ return e && e.date === opts.value; });
+        if(modeQ === 'month') logs = logs.filter(function(e){ return monthKeyFromDateStr(e.date) === opts.value; });
+        return logs.slice(0, limitN);
+      }
+
+      try {
+        var fs = fb.fs;
+        var db = fb.db;
+        var col = fs.collection(db, COL_LOGS);
+        var q;
+        if(modeQ === 'day') {
+          var r = rangeMsForDay(opts.value);
+          q = fs.query(col, fs.where('tsMs','>=',r.start), fs.where('tsMs','<',r.end), fs.orderBy('tsMs','desc'), fs.limit(limitN));
+        } else if(modeQ === 'month') {
+          var rm = rangeMsForMonth(opts.value);
+          q = fs.query(col, fs.where('tsMs','>=',rm.start), fs.where('tsMs','<',rm.end), fs.orderBy('tsMs','desc'), fs.limit(limitN));
+        } else {
+          q = fs.query(col, fs.orderBy('tsMs','desc'), fs.limit(limitN));
+        }
+        var snaps = await fs.getDocs(q);
+        var out = [];
+        snaps.forEach(function(docSnap){ out.push(docSnap.data()); });
+        return out;
+      } catch(e) {
+        console.error(e);
+        if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return queryLogs(opts); }
+        return [];
+      }
+    }
+
+    async function resetDay(dateStr) {
+      if(mode !== 'firebase') {
+        var st = buildDefaultLocalState();
+        saveLocalState(st);
+        return true;
+      }
+      try {
+        var fs = fb.fs;
+        var db = fb.db;
+        var promises = [];
+        Object.keys(DIRS).forEach(function(dirKey){
+          DIRS[dirKey].baseTimes.forEach(function(t){
+            var id = slotDocId(dateStr, dirKey, t);
+            var ref = fs.doc(db, COL_SLOTS, id);
+            promises.push(fs.setDoc(ref, { date: dateStr, dir: dirKey, time: t, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {}, updatedAt: fs.serverTimestamp() }, { merge:true }));
+          });
+        });
+        await Promise.all(promises);
+        return true;
+      } catch(e) {
+        console.error(e);
+        if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return resetDay(dateStr); }
+        return false;
+      }
+    }
+
+    return {
+      initFirebase: initFirebase,
+      getMode: getMode,
+      getSlot: getSlot,
+      listSlots: listSlots,
+      book: book,
+      cancel: cancel,
+      getStatsMonth: getStatsMonth,
+      queryLogs: queryLogs,
+      resetDay: resetDay
+    };
+  })();
+
+  // ============================
+  // UI helpers
+  // ============================
+  function $(id) { return document.getElementById(id); }
+
+  function renderNav(activeKey) {
+    var nav = $('nav');
+    nav.innerHTML = '';
+    var items = [
+      { key:'/', label:'ตารางเวลา', href:'#/' },
+      { key:'/logs', label:'บันทึก/สถิติ', href:'#/logs' }
+    ];
+    items.forEach(function(it){
+      var a = document.createElement('a');
+      a.href = it.href;
+      a.className = 'chip' + (activeKey===it.key ? ' active' : '');
+      a.textContent = it.label;
+      nav.appendChild(a);
+    });
+  }
+
+  function loadUi() {
+    try {
+      var raw = localStorage.getItem(LS_UI);
+      if(!raw) return { dir:'out' };
+      var p = JSON.parse(raw);
+      return { dir: (p && p.dir === 'back') ? 'back' : 'out' };
+    } catch(e) { return { dir:'out' }; }
+  }
+  function saveUi(ui) { localStorage.setItem(LS_UI, JSON.stringify(ui)); }
+
+  // ============================
+  // Excel export
+  // ============================
+  function buildExcelHtml(logs) {
+    var rows = logs.map(function(e){
+      var ts = e.tsMs ? new Date(e.tsMs).toLocaleString() : '';
+      var action = e.action || '';
+      var dir = e.dir === 'out' ? 'ขาไป' : (e.dir === 'back' ? 'ขากลับ' : (e.dir || ''));
+      var time = e.time || '';
+      var room = e.room || '';
+      var pax = (typeof e.pax === 'number') ? e.pax : (e.pax || '');
+      var pickup = e.pickup || '';
+      var destination = e.destination || '';
+      var pickupTime = e.pickupTime || '';
+      var arriveTime = e.arriveTime || '';
+      var date = e.date || '';
+      return '\n<tr>' +
+        '<td>' + escapeHtml(ts) + '</td>' +
+        '<td>' + escapeHtml(date) + '</td>' +
+        '<td>' + escapeHtml(action) + '</td>' +
+        '<td>' + escapeHtml(dir) + '</td>' +
+        '<td>' + escapeHtml(time) + '</td>' +
+        '<td>' + escapeHtml(room) + '</td>' +
+        '<td>' + escapeHtml(pax) + '</td>' +
+        '<td>' + escapeHtml(pickup) + '</td>' +
+        '<td>' + escapeHtml(destination) + '</td>' +
+        '<td>' + escapeHtml(pickupTime) + '</td>' +
+        '<td>' + escapeHtml(arriveTime) + '</td>' +
+      '</tr>';
+    }).join('\n');
+
+    return (
+      '<!doctype html>\n<html>\n<head>\n<meta charset="UTF-8" />\n</head>\n<body>' +
+      '<table border="1">' +
+      '<thead><tr>' +
+      '<th>Timestamp</th><th>Date</th><th>Action</th><th>Direction</th><th>Time</th><th>Room</th><th>Pax</th>' +
+      '<th>Pickup</th><th>Destination</th><th>Pickup time</th><th>Arrival time</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+      '</body></html>'
+    );
+  }
+
+  async function doExport(mode, value) {
+    var logs;
+    if(mode === 'day') logs = await storage.queryLogs({ mode:'day', value:value, limit: 1000000 });
+    else if(mode === 'month') logs = await storage.queryLogs({ mode:'month', value:value, limit: 1000000 });
+    else logs = await storage.queryLogs({ mode:'all', limit: 1000000 });
+
+    var html = buildExcelHtml(logs);
+    var suffix = (mode === 'day') ? value : (mode === 'month' ? value : ('all-' + todayKey()));
+    downloadBlob('laya-shuttle-logs-' + suffix + '.xls', 'application/vnd.ms-excel;charset=utf-8', '\ufeff' + html);
+  }
+
+  // ============================
+  // Views
+  // ============================
+  async function viewSchedule() {
+    renderNav('/');
+    var ui = loadUi();
+    var date = todayKey();
+    var dirKey = ui.dir;
+
+    var mode = storage.getMode();
+
+    var slots = await storage.listSlots(date, dirKey);
+
+    var cardsHtml = slots.map(function(s){
+      var closed = isClosedToday(s.time);
+      var btnLabel = closed ? 'ปิดแล้ว' : 'เลือก';
+      var btnKind = closed ? 'primary' : 'pick';
+      var availClass = (s.available===0) ? 'danger' : '';
+      return '\n<div class="slot">' +
+        '<div class="meta">' +
+          '<div class="time">' + escapeHtml(s.time) + '</div>' +
+          '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + (closed ? ' • <span class="danger-text">ปิดทำรายการ</span>' : '') + '</div>' +
+        '</div>' +
+        '<button class="btn ' + btnKind + '" ' + ((closed || s.available===0) ? 'disabled' : '') + ' onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
+      '</div>';
+    }).join('\n');
+
+    var right = '';
+    right += '<section class="card">';
+    right += '<div class="card-h"><div><h2>Export Log</h2><p class="hint">Storage: <b>' + (mode==='firebase' ? 'Firebase' : 'Local') + '</b> • Export แยกวัน/เดือน/ทั้งหมดได้</p></div></div>';
+    right += '<div class="card-b">';
+    right += '<div class="footer-actions">' +
+      '<button class="btn ghost" onclick="window.__exportDay()">Export วันนี้</button>' +
+      '<button class="btn ghost" onclick="window.__exportMonth()">Export เดือนนี้</button>' +
+      '<button class="btn ghost" onclick="window.__exportAll()">Export ทั้งหมด</button>' +
+      '<button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันนี้)</button>' +
+    '</div>';
+    right += '<div class="mini">Tip: ถ้า Firebase โควต้าเต็ม ระบบจะสลับเป็น Local ชั่วคราว เพื่อให้ใช้งานต่อได้</div>';
+    right += '</div></section>';
+
+    $('view').innerHTML =
+      '<div class="grid">' +
+        '<section class="card">' +
+          '<div class="card-h">' +
+            '<div><h2>ตารางเวลาเดินรถ</h2><p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วกด “เลือก” เพื่อไปหน้าเลือกปลายทาง/จุดรับ</p></div>' +
+            '<div class="row">' +
+              '<span class="pill"><span class="dot"></span> ' + (mode==='firebase' ? 'Firebase' : 'Local') + '</span>' +
+              '<button class="chip ' + (dirKey==='out'?'active':'') + '" onclick="window.__setDir(\'out\')">ขาไป</button>' +
+              '<button class="chip ' + (dirKey==='back'?'active':'') + '" onclick="window.__setDir(\'back\')">ขากลับ</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="card-b"><div class="slots">' + cardsHtml + '</div></div>' +
+        '</section>' +
+        right +
+      '</div>';
+
+    window.__setDir = function(d){
+      var ui2 = loadUi();
+      ui2.dir = (d==='back') ? 'back' : 'out';
+      saveUi(ui2);
+      render().catch(console.error);
     };
 
-    const pad2 = (n) => String(n).padStart(2, "0");
-    function timeToMin(t){
-      const [h,m] = String(t).split(":").map(Number);
-      return (h*60) + m;
-    }
-    function minToTime(min){
-      const m = ((min % (24*60)) + (24*60)) % (24*60);
-      const h = Math.floor(m/60);
-      const mm = m%60;
-      return `${pad2(h)}:${pad2(mm)}`;
-    }
-    function addMin(t, delta){ return minToTime(timeToMin(t) + delta); }
+    window.__openBooking = function(d, t){
+      setHash('/book?dir=' + encodeURIComponent(d) + '&time=' + encodeURIComponent(t));
+    };
 
-    function todayKey(){
-      const d = new Date();
-      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
-    }
-    function currentMonthKey(){
-      const d = new Date();
-      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-    }
-    function nowMin(){
-      const d = new Date();
-      return d.getHours()*60 + d.getMinutes();
-    }
+    window.__exportDay = function(){ doExport('day', todayKey()).catch(console.error); };
+    window.__exportMonth = function(){ doExport('month', currentMonthKey()).catch(console.error); };
+    window.__exportAll = function(){ doExport('all','').catch(console.error); };
 
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
+    window.__resetSeats = function(){
+      if(!confirm('ต้องการรีเซ็ตที่นั่งของวันนี้ (ไม่ลบ Log) ใช่ไหม?')) return;
+      storage.resetDay(todayKey()).then(function(ok){
+        if(ok) toast('รีเซ็ตที่นั่งแล้ว', 'วันที่ ' + todayKey());
+        else toast('รีเซ็ตไม่สำเร็จ', 'ตรวจสอบ Firebase/Quota');
+        render().catch(console.error);
+      });
+    };
+  }
 
-    function toast(title, desc=""){
-      const el = document.getElementById("toast");
-      document.getElementById("toastTitle").textContent = title;
-      document.getElementById("toastDesc").textContent = desc;
-      el.classList.add("show");
-      clearTimeout(toast._t);
-      toast._t = setTimeout(() => el.classList.remove("show"), 2600);
-    }
+  async function viewBooking(dirKey, baseTime) {
+    renderNav('/');
+    var date = todayKey();
+    var dir = (dirKey==='back') ? DIRS.back : DIRS.out;
+    var closed = isClosedToday(baseTime);
 
-    function parseHash(){
-      const raw = location.hash || "#/";
-      const parts = raw.replace(/^#/, "").split("?");
-      const path = parts[0];
-      const params = new URLSearchParams(parts[1] || "");
-      return { path, params };
-    }
-    function setHash(path){ location.hash = `#${path}`; }
+    var slot = await storage.getSlot(date, dir.key, baseTime);
 
-    function downloadBlob(filename, mime, content){
-      const blob = new Blob([content], { type: mime });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
+    var options = dir.selectable.map(function(p){
+      return '<option value="' + escapeHtml(p.key) + '">' + escapeHtml(p.name) + '</option>';
+    }).join('');
 
-    function monthKeyFromISO(iso){
-      try {
-        const d = new Date(iso);
-        if(!Number.isFinite(d.getTime())) return "";
-        return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-      } catch { return ""; }
-    }
+    $('view').innerHTML =
+      '<section class="card">' +
+        '<div class="card-h">' +
+          '<div><h2>' + escapeHtml(dir.label) + ' • รอบเวลา <span style="color:var(--gold-2)">' + escapeHtml(baseTime) + '</span></h2>' +
+          '<p class="hint">เลือก ' + escapeHtml(dir.selectLabel) + ' ก่อน แล้วระบบจะแสดงเวลาถึง</p></div>' +
+          '<div class="row"><button class="btn ghost" onclick="window.__back()">ย้อนกลับ</button></div>' +
+        '</div>' +
+        '<div class="card-b" style="max-width: 860px;">' +
+          '<div class="row" style="gap:12px">' +
+            '<div class="field" style="flex:1 1 360px">' +
+              '<label for="place">' + escapeHtml(dir.selectLabel) + '</label>' +
+              '<select id="place"><option value="">— โปรดเลือก —</option>' + options + '</select>' +
+            '</div>' +
+            '<div class="field" style="flex:1 1 260px">' +
+              '<label>เวลาถึงโดยประมาณ</label>' +
+              '<input id="arrival" readonly value="—" />' +
+            '</div>' +
+          '</div>' +
+          '<div class="note" id="routeNote">เลือก ' + escapeHtml(dir.selectLabel) + ' เพื่อคำนวณเวลา</div>' +
+          '<div class="divider"></div>' +
+          '<div class="row" style="gap:12px">' +
+            '<div class="field" style="flex:1 1 260px">' +
+              '<label for="room">เลขห้อง</label>' +
+              '<input id="room" autocomplete="off" placeholder="เช่น A105" />' +
+            '</div>' +
+            '<div class="field" style="flex:0 0 240px">' +
+              '<label for="pax">จำนวนคน</label>' +
+              '<input id="pax" type="number" min="1" step="1" inputmode="numeric" placeholder="เช่น 2" />' +
+            '</div>' +
+          '</div>' +
+          '<div style="height:12px"></div>' +
+          '<div class="row">' +
+            '<button id="btnBook" class="btn primary" onclick="window.__book()">จอง</button>' +
+            '<button class="btn danger" onclick="window.__cancel()">ยกเลิกการจอง</button>' +
+            '<span class="pill"><span class="dot"></span> 1 ห้อง/1 รอบ จองได้ครั้งเดียว</span>' +
+          '</div>' +
+          '<div class="mini" id="mini"></div>' +
+          '<div class="note" id="note"></div>' +
+          '<div class="divider"></div>' +
+          '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
+            '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">รายการจองในรอบนี้</h2><p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาถึง</p></div></div>' +
+            '<div class="card-b" id="bookingsTable"></div>' +
+          '</div>' +
+        '</div>' +
+      '</section>';
 
-    function slotId(dirKey, baseTime){ return `${dirKey}|${baseTime}`; }
+    var placeEl = $('place');
+    var arrivalEl = $('arrival');
+    var routeNoteEl = $('routeNote');
+    var roomEl = $('room');
+    var paxEl = $('pax');
+    var bookBtn = $('btnBook');
+    var noteEl = $('note');
 
-    function buildDefaultState(){
-      const date = todayKey();
-      const slots = {};
-      for(const dirKey of Object.keys(DIRS)){
-        for(const t of DIRS[dirKey].baseTimes){
-          slots[slotId(dirKey, t)] = { capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
-        }
-      }
-      return { version: 4, date, slots };
-    }
-
-    function loadState(){
-      // Firebase mode
-      if(FB.ready && STATE_CACHE){
-        return STATE_CACHE;
-      }
-
-      // Local fallback
-      try {
-        const raw = localStorage.getItem(LS_STATE);
-        const base = buildDefaultState();
-        if(!raw) return base;
-        const parsed = JSON.parse(raw);
-
-        // reset seats daily, but keep logs
-        if(!parsed || parsed.date !== base.date) return base;
-
-        const merged = { ...base, ...parsed, slots: { ...base.slots, ...(parsed.slots || {}) } };
-        for(const id of Object.keys(base.slots)){
-          const s = merged.slots[id];
-          if(!s || typeof s.available !== "number") merged.slots[id] = base.slots[id];
-          if(!merged.slots[id].bookings) merged.slots[id].bookings = {};
-          if(!merged.slots[id].capacity) merged.slots[id].capacity = CAPACITY_PER_TRIP;
-          merged.slots[id].available = Math.max(0, Math.min(merged.slots[id].capacity, merged.slots[id].available));
-        }
-        return merged;
-      } catch {
-        return buildDefaultState();
-      }
-    }function saveState(st){
-      // Firebase mode: write daily doc (used for reset etc.)
-      if(FB.ready){
-        const normalized = normalizeState(st);
-        STATE_CACHE = normalized;
-        stateDocRef(normalized.date).set(normalized, { merge: false }).catch((e)=>console.error("saveState firebase failed", e));
+    function updateArrival() {
+      var t = calcTimes(dir.key, baseTime, placeEl.value);
+      if(!t) {
+        arrivalEl.value = '—';
+        routeNoteEl.textContent = 'เลือก ' + dir.selectLabel + ' เพื่อคำนวณเวลา';
         return;
       }
-      localStorage.setItem(LS_STATE, JSON.stringify(st));
-    }function loadLogs(){
-      // Firebase mode
-      if(FB.ready){
-        return Array.isArray(LOGS_CACHE) ? LOGS_CACHE : [];
-      }
-
-      // Local fallback
-      try {
-        const raw = localStorage.getItem(LS_LOGS);
-        if(!raw) return [];
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch { return []; }
-    }function addLog(entry){
-      // Firebase mode: add to Firestore
-      if(FB.ready){
-        const date = entry.date || todayKey();
-        const payload = {
-          ...entry,
-          date,
-          month: String(date).slice(0,7),
-          tsMs: entry.tsMs || Date.now(),
-        };
-        // keep ts as ISO for export readability
-        if(!payload.ts) payload.ts = new Date(payload.tsMs).toISOString();
-        return logsColRef().add(payload).catch((e)=>console.error("addLog firebase failed", e));
-      }
-
-      // Local fallback
-      const logs = loadLogs();
-      logs.unshift(entry);
-      localStorage.setItem(LS_LOGS, JSON.stringify(logs));
-    }function loadUi(){
-      try {
-        const raw = localStorage.getItem(LS_UI);
-        if(!raw) return { dir: "out" };
-        const parsed = JSON.parse(raw);
-        return { dir: (parsed.dir === "back") ? "back" : "out" };
-      } catch { return { dir: "out" }; }
-    }
-
-    function saveUi(ui){ localStorage.setItem(LS_UI, JSON.stringify(ui)); }
-
-    function isClosedToday(baseTime){ return nowMin() >= timeToMin(baseTime); }
-
-    async function bookSeat(slotIdStr, room, pax, meta){
-      // Firebase mode (transaction-safe)
-      if(FB.ready){
-        const date = todayKey();
-        const ref = stateDocRef(date);
-        const tsMs = Date.now();
-
-        try{
-          await FB.db.runTransaction(async (tx) => {
-            const snap = await tx.get(ref);
-            let st = snap.exists ? normalizeState(snap.data()) : buildDefaultState();
-
-            const slot = st.slots[slotIdStr] || { capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
-            slot.bookings = slot.bookings || {};
-
-            const existing = slot.bookings[room];
-            if(existing && existing.pax > 0){
-              throw new Error(`ROOM_ALREADY_BOOKED|${existing.pax}`);
-            }
-            if(pax > slot.available){
-              throw new Error(`NO_SEATS|${slot.available}`);
-            }
-
-            slot.bookings[room] = { pax, ...meta };
-            slot.available = slot.available - pax;
-            st.slots[slotIdStr] = slot;
-
-            tx.set(ref, st, { merge: false });
-
-            const logRef = logsColRef().doc();
-            tx.set(logRef, {
-              ts: new Date(tsMs).toISOString(),
-              tsMs,
-              month: date.slice(0,7),
-              date,
-              action: "BOOK",
-              slotId: slotIdStr,
-              dir: meta.dir,
-              roundBase: meta.roundBase,
-              pickup: meta.pickup,
-              destination: meta.destination,
-              pickupTime: meta.pickupTime,
-              arriveTime: meta.arriveTime,
-              room,
-              pax
-            });
-          });
-
-          return { ok:true };
-        }catch(err){
-          const msg = String(err?.message || err || "");
-          if(msg.startsWith("ROOM_ALREADY_BOOKED|")){
-            const n = msg.split("|")[1] || "";
-            return { ok:false, msg:`ห้องนี้จองแล้ว ${n} คน (กันการกดซ้ำ)` };
-          }
-          if(msg.startsWith("NO_SEATS|")){
-            return { ok:false, msg:"ที่นั่งไม่พอสำหรับจำนวนคนที่เลือก" };
-          }
-          console.error("bookSeat firebase error", err);
-          return { ok:false, msg:"จองไม่สำเร็จ (ตรวจสอบ Firebase/Internet/Rules)" };
-        }
-      }
-
-      // Local fallback (เดิม)
-      const st = loadState();
-      const slot = st.slots[slotIdStr];
-      if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
-
-      const existing = slot.bookings[room];
-      if(existing && existing.pax > 0){
-        return { ok:false, msg:`ห้องนี้จองแล้ว ${existing.pax} คน (กันการกดซ้ำ)` };
-      }
-
-      if(pax > slot.available) return { ok:false, msg:"ที่นั่งไม่พอสำหรับจำนวนคนที่เลือก" };
-      slot.bookings[room] = { pax, ...meta };
-      slot.available -= pax;
-      saveState(st);
-
-      addLog({
-        ts: new Date().toISOString(),
-        date: st.date,
-        action: "BOOK",
-        slotId: slotIdStr,
-        dir: meta.dir,
-        roundBase: meta.roundBase,
-        pickup: meta.pickup,
-        destination: meta.destination,
-        pickupTime: meta.pickupTime,
-        arriveTime: meta.arriveTime,
-        room,
-        pax
-      });
-      return { ok:true };
-    }async function cancelSeat(slotIdStr, room, pax){
-      // Firebase mode (transaction-safe)
-      if(FB.ready){
-        const date = todayKey();
-        const ref = stateDocRef(date);
-        const tsMs = Date.now();
-
-        try{
-          await FB.db.runTransaction(async (tx) => {
-            const snap = await tx.get(ref);
-            let st = snap.exists ? normalizeState(snap.data()) : buildDefaultState();
-
-            const slot = st.slots[slotIdStr];
-            if(!slot) throw new Error("NO_SLOT");
-            slot.bookings = slot.bookings || {};
-
-            const existing = slot.bookings[room];
-            const booked = existing ? (existing.pax || 0) : 0;
-            if(booked <= 0) throw new Error("NO_BOOKING");
-            if(pax > booked) throw new Error(`TOO_MUCH_CANCEL|${booked}`);
-
-            const left = booked - pax;
-            if(left === 0) delete slot.bookings[room];
-            else slot.bookings[room].pax = left;
-
-            slot.available = Math.min(slot.capacity || CAPACITY_PER_TRIP, (slot.available || 0) + pax);
-            st.slots[slotIdStr] = slot;
-
-            tx.set(ref, st, { merge: false });
-
-            const logRef = logsColRef().doc();
-            tx.set(logRef, {
-              ts: new Date(tsMs).toISOString(),
-              tsMs,
-              month: date.slice(0,7),
-              date,
-              action: "CANCEL",
-              slotId: slotIdStr,
-              dir: existing?.dir || "",
-              roundBase: existing?.roundBase || "",
-              pickup: existing?.pickup || "",
-              destination: existing?.destination || "",
-              pickupTime: existing?.pickupTime || "",
-              arriveTime: existing?.arriveTime || "",
-              room,
-              pax
-            });
-          });
-
-          return { ok:true };
-        }catch(err){
-          const msg = String(err?.message || err || "");
-          if(msg === "NO_BOOKING"){
-            return { ok:false, msg:"เลขห้องนี้ยังไม่มีการจองในรอบนี้" };
-          }
-          if(msg.startsWith("TOO_MUCH_CANCEL|")){
-            const booked = msg.split("|")[1] || "";
-            return { ok:false, msg:`ยกเลิกเกินจำนวนที่จองไว้ (จองไว้ ${booked} คน)` };
-          }
-          console.error("cancelSeat firebase error", err);
-          return { ok:false, msg:"ยกเลิกไม่สำเร็จ (ตรวจสอบ Firebase/Internet/Rules)" };
-        }
-      }
-
-      // Local fallback (เดิม)
-      const st = loadState();
-      const slot = st.slots[slotIdStr];
-      if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
-
-      const existing = slot.bookings[room];
-      const booked = existing ? (existing.pax || 0) : 0;
-      if(booked <= 0) return { ok:false, msg:"เลขห้องนี้ยังไม่มีการจองในรอบนี้" };
-      if(pax > booked) return { ok:false, msg:`ยกเลิกเกินจำนวนที่จองไว้ (จองไว้ ${booked} คน)` };
-
-      const left = booked - pax;
-      if(left === 0) delete slot.bookings[room];
-      else slot.bookings[room].pax = left;
-
-      slot.available = Math.min(slot.capacity, slot.available + pax);
-      saveState(st);
-
-      addLog({
-        ts: new Date().toISOString(),
-        date: st.date,
-        action: "CANCEL",
-        slotId: slotIdStr,
-        dir: existing?.dir || "",
-        roundBase: existing?.roundBase || "",
-        pickup: existing?.pickup || "",
-        destination: existing?.destination || "",
-        pickupTime: existing?.pickupTime || "",
-        arriveTime: existing?.arriveTime || "",
-        room,
-        pax
-      });
-
-      return { ok:true };
-    }function calcTimes(dirKey, baseTime, placeKey){
-      const dir = DIRS[dirKey];
-      if(!dir || !placeKey) return null;
-
-      if(dirKey === "out"){
-        const dest = dir.timeline.find(x => x.key === placeKey);
-        if(!dest) return null;
-        return {
-          pickup: "Hotel",
-          destination: dest.name,
-          pickupTime: baseTime,
-          arriveTime: addMin(baseTime, dest.offset),
-        };
-      }
-
-      const pickupStop = dir.timeline.find(x => x.key === placeKey);
-      const hotelStop = dir.timeline.find(x => x.key === "HOTEL");
-      if(!pickupStop || !hotelStop) return null;
-
-      return {
-        pickup: pickupStop.name,
-        destination: "Hotel",
-        pickupTime: addMin(baseTime, pickupStop.offset),
-        arriveTime: addMin(baseTime, hotelStop.offset),
-      };
-    }
-
-    function computeStats(logs, dirKey, monthKey){
-      const per = {};
-      for(const t of DIRS[dirKey].baseTimes) per[t] = 0;
-
-      let countThisMonth = 0;
-      for(const e of logs){
-        if(!e || e.action !== "BOOK" || typeof e.pax !== "number") continue;
-        if(e.dir !== dirKey) continue;
-        if(monthKey && monthKeyFromISO(e.ts) !== monthKey) continue;
-        countThisMonth += 1;
-        if(e.roundBase) per[e.roundBase] = (per[e.roundBase] || 0) + e.pax;
-      }
-
-      const top = Object.entries(per).sort((a,b)=>b[1]-a[1])[0];
-      return {
-        per,
-        topTime: top?.[0] || null,
-        topValue: top?.[1] || 0,
-        countThisMonth,
-      };
-    }
-
-    function buildExcelHtml(logs){
-      const rows = logs.map((e) => {
-        const dt = new Date(e.ts);
-        const ts = Number.isFinite(dt.getTime()) ? dt.toLocaleString() : (e.ts || "");
-        const action = e.action || "";
-        const dir = e.dir === "out" ? "ขาไป" : (e.dir === "back" ? "ขากลับ" : (e.dir || ""));
-        const roundBase = e.roundBase || "";
-        const pickup = e.pickup || "";
-        const destination = e.destination || "";
-        const pickupTime = e.pickupTime || "";
-        const arriveTime = e.arriveTime || "";
-        const room = e.room || "";
-        const pax = (typeof e.pax === "number") ? e.pax : "";
-
-        return `\n<tr>\n<td>${escapeHtml(ts)}</td>\n<td>${escapeHtml(e.date || "")}</td>\n<td>${escapeHtml(action)}</td>\n<td>${escapeHtml(dir)}</td>\n<td>${escapeHtml(roundBase)}</td>\n<td>${escapeHtml(pickup)}</td>\n<td>${escapeHtml(destination)}</td>\n<td>${escapeHtml(pickupTime)}</td>\n<td>${escapeHtml(arriveTime)}</td>\n<td>${escapeHtml(room)}</td>\n<td>${escapeHtml(pax)}</td>\n</tr>`;
-      }).join("\\n");
-
-      return (`\n<!doctype html>\n<html>\n<head>\n<meta charset="UTF-8" />\n</head>\n<body>\n<table border="1">\n<thead>\n<tr>\n<th>Timestamp</th>\n<th>Date</th>\n<th>Action</th>\n<th>Direction</th>\n<th>Round</th>\n<th>Pickup</th>\n<th>Destination</th>\n<th>Pickup time</th>\n<th>Arrival time</th>\n<th>Room</th>\n<th>Pax</th>\n</tr>\n</thead>\n<tbody>\n${rows}\n</tbody>\n</table>\n</body>\n</html>\n`).trim();
-    }
-
-    function filterLogs(allLogs, mode, value){
-      if(mode === "day"){
-        const day = value || todayKey();
-        return allLogs.filter(e => (e?.date || "") === day);
-      }
-      if(mode === "month"){
-        const m = value || currentMonthKey();
-        return allLogs.filter(e => {
-          const byDate = (e?.date && String(e.date).length >= 7) ? String(e.date).slice(0,7) : "";
-          const mk = byDate || monthKeyFromISO(e?.ts || "");
-          return mk === m;
-        });
-      }
-      return allLogs;
-    }
-
-    async function exportLogsExcel(mode="all", value=""){
-      let logs = [];
-      const today = todayKey();
-
-      if(FB.ready){
-        try{
-          if(mode === "day"){
-            const day = value || today;
-            const qs = await logsColRef().where("date","==",day).get();
-            logs = qs.docs.map(d=>d.data());
-          } else if(mode === "month"){
-            const m = value || currentMonthKey();
-            const qs = await logsColRef().where("month","==",m).get();
-            logs = qs.docs.map(d=>d.data());
-          } else {
-            // all: limit for safety (ปรับได้)
-            const qs = await logsColRef().orderBy("tsMs","desc").limit(5000).get();
-            logs = qs.docs.map(d=>d.data());
-          }
-
-          logs.sort((a,b)=>(b?.tsMs||0)-(a?.tsMs||0));
-        }catch(err){
-          console.error("exportLogsExcel firebase error", err);
-          toast("Export ไม่สำเร็จ", "ตรวจสอบ Firestore / Rules / Internet");
-          return;
-        }
+      if(dir.key === 'out') {
+        arrivalEl.value = 'ถึง ' + t.destination + ' ' + t.arriveTime;
+        routeNoteEl.innerHTML = 'ออกจาก <b>' + escapeHtml(t.pickup) + '</b> เวลา <b>' + escapeHtml(t.pickupTime) + '</b> • ถึง <b>' + escapeHtml(t.destination) + '</b> เวลา <b>' + escapeHtml(t.arriveTime) + '</b>';
       } else {
-        const allLogs = loadLogs();
-        logs = filterLogs(allLogs, mode, value);
-      }
-
-      let suffix = `all-${today}`;
-      if(mode === "day") suffix = value || today;
-      if(mode === "month") suffix = value || currentMonthKey();
-
-      const html = buildExcelHtml(logs);
-      const fname = `laya-shuttle-logs-${suffix}.xls`;
-      downloadBlob(fname, "application/vnd.ms-excel;charset=utf-8", "\ufeff" + html);
-    }function renderNav(active){
-      const nav = document.getElementById("nav");
-      nav.innerHTML = "";
-      const items = [
-        { key:"/", label:"ตารางเวลา", href:"#/" },
-        { key:"/logs", label:"บันทึก/สถิติ", href:"#/logs" },
-      ];
-      for(const it of items){
-        const a = document.createElement("a");
-        a.href = it.href;
-        a.className = `chip ${active===it.key ? "active" : ""}`;
-        a.textContent = it.label;
-        nav.appendChild(a);
+        arrivalEl.value = 'ถึง Hotel ' + t.arriveTime;
+        routeNoteEl.innerHTML = 'รับที่ <b>' + escapeHtml(t.pickup) + '</b> เวลา <b>' + escapeHtml(t.pickupTime) + '</b> • ถึง <b>Hotel</b> เวลา <b>' + escapeHtml(t.arriveTime) + '</b>';
       }
     }
 
-    function viewSchedule(){
-      renderNav("/");
-      const ui = loadUi();
-      const st = loadState();
-      const logs = loadLogs();
-
-      const dirKey = ui.dir;
-      const dir = DIRS[dirKey];
-
-      const d = new Date();
-      const monthKey = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-      const stats = computeStats(logs, dirKey, monthKey);
-
-      const cards = dir.baseTimes.map((t) => {
-        const id = slotId(dirKey, t);
-        const s = st.slots[id];
-        const closed = isClosedToday(t);
-        const btnLabel = closed ? "ปิดแล้ว" : "เลือก";
-        const btnKind = closed ? "primary" : "pick";
-        const availClass = (s.available===0) ? "danger" : "";
-        return `\n<div class="slot">\n  <div class="meta">\n    <div class="time">${escapeHtml(t)}</div>\n    <div class="seat">ที่นั่งว่าง: <b class="${availClass}">${s.available}</b> / ${s.capacity}${closed ? " • <span class=\"danger-text\">ปิดทำรายการ</span>" : ""}</div>\n  </div>\n  <button class="btn ${btnKind}" ${(closed || s.available===0) ? "disabled" : ""} onclick="window.__openBooking('${dirKey}','${t}')">${btnLabel}</button>\n</div>`;
-      }).join("\n");
-
-      const maxVal = Math.max(...Object.values(stats.per));
-      const bars = Object.entries(stats.per)
-        .sort((a,b)=>a[0].localeCompare(b[0]))
-        .map(([t,v]) => {
-          const w = maxVal ? Math.round((v/maxVal)*100) : 0;
-          return `\n<div class="bar">\n  <div class="lbl">${escapeHtml(t)}</div>\n  <div class="track"><div class="fill" style="width:${w}%"></div></div>\n  <div class="num">${v}</div>\n</div>`;
-        }).join("\n");
-
-      const el = document.getElementById("view");
-      el.innerHTML = `
-        <div class="grid">
-          <section class="card">
-            <div class="card-h">
-              <div>
-                <h2>ตารางเวลาเดินรถ</h2>
-                <p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วกด “เลือก” เพื่อไปหน้าเลือกปลายทาง/จุดรับ</p>
-              </div>
-              <div class="row">
-                <span class="badge"><span class="dot"></span> ${FB.ready ? "Firebase" : "Local"}</span>
-                <button class="chip ${dirKey==="out"?"active":""}" onclick="window.__setDir('out')">ขาไป</button>
-                <button class="chip ${dirKey==="back"?"active":""}" onclick="window.__setDir('back')">ขากลับ</button>
-              </div>
-            </div>
-            <div class="card-b">
-              <div class="slots">${cards}</div>
-              <div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วจอง/ยกเลิกไม่ได้</div>
-            </div>
-          </section>
-
-          <aside class="card">
-            <div class="card-h">
-              <div>
-                <h2>สถิติจาก Log</h2>
-                <p class="hint">โหมด: <b>${dirKey==="out"?"ขาไป":"ขากลับ"}</b> • เดือน <b>${monthKey}</b> (ยอด BOOK รวม)</p>
-              </div>
-            </div>
-            <div class="card-b">
-              <div class="kpi">
-                <div class="big">${stats.topTime ? escapeHtml(stats.topTime) : "—"}</div>
-                <div class="small">ยอดจองรวมสูงสุด • <b>${stats.topValue}</b> คน</div>
-                <div class="divider"></div>
-                <div class="small">Log เดือนนี้โหลด: <b>${stats.countThisMonth}</b> รายการ • Log ทั้งหมด: <b>${logs.length}</b></div>
-              </div>
-              <div style="height:12px"></div>
-              <div class="barwrap">${bars}</div>
-              <div class="divider"></div>
-              <div class="footer-actions">
-                <button class="btn" onclick="window.__exportDay()">Export วันนี้</button>
-                <button class="btn" onclick="window.__exportMonth()">Export เดือนนี้</button>
-                <button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button>
-                <button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันนี้)</button>
-              </div>
-            </div>
-          </aside>
-        </div>
-      `;
-
-      window.__setDir = (d2) => {
-        const ui2 = loadUi();
-        ui2.dir = (d2 === "back") ? "back" : "out";
-        saveUi(ui2);
-        render();
-      };
-      window.__openBooking = (d2, t2) => setHash(`/book?dir=${encodeURIComponent(d2)}&time=${encodeURIComponent(t2)}`);
-      window.__exportDay = () => exportLogsExcel("day", todayKey());
-      window.__exportMonth = () => exportLogsExcel("month", currentMonthKey());
-      window.__exportAll = () => exportLogsExcel("all");
-      window.__resetSeats = () => {
-        if(!confirm("ต้องการรีเซ็ตที่นั่งของวันนี้ (ไม่ลบ Log) ใช่ไหม?")) return;
-        const st2 = buildDefaultState();
-        saveState(st2);
-        toast("รีเซ็ตที่นั่งแล้ว", `วันที่ ${st2.date}`);
-        render();
-      };
+    function renderBookings(slotData) {
+      var sl = slotData;
+      var b = sl.bookings || {};
+      var entries = Object.keys(b).map(function(k){ return b[k]; }).filter(Boolean);
+      entries.sort(function(a,c){ return String(a.room||'').localeCompare(String(c.room||'')); });
+      var wrap = $('bookingsTable');
+      if(entries.length === 0) { wrap.innerHTML = '<div class="mini">ยังไม่มีการจองในรอบนี้</div>'; return; }
+      var rows = entries.map(function(obj){
+        var line = (obj.pickup && obj.destination) ? (obj.pickup + ' → ' + obj.destination) : '';
+        var arrive = obj.arriveTime ? ('ถึง ' + obj.arriveTime) : '';
+        return '<tr><td>' + escapeHtml(obj.room||'') + '</td><td><b>' + escapeHtml(obj.pax||'') + '</b></td><td>' + escapeHtml(line) + '</td><td>' + escapeHtml(arrive) + '</td></tr>';
+      }).join('');
+      wrap.innerHTML = '<table><thead><tr><th>เลขห้อง</th><th>จำนวนคน</th><th>เส้นทาง</th><th>เวลาถึง</th></tr></thead><tbody>' + rows + '</tbody></table>';
     }
 
-    function viewBooking(dirKey, baseTime){
-      renderNav("/");
-      const st = loadState();
-      const dir = (dirKey === "back") ? DIRS.back : DIRS.out;
-      const id = slotId(dir.key, baseTime);
-      const slot = st.slots[id];
-      if(!slot){ toast("ไม่พบรอบเวลา", "กลับไปเลือกใหม่"); setHash("/"); return; }
-
-      const closed = isClosedToday(baseTime);
-      const options = dir.selectable
-        .map(p => `<option value="${escapeHtml(p.key)}">${escapeHtml(p.name)}</option>`)
-        .join("");
-
-      const el = document.getElementById("view");
-      el.innerHTML = `
-        <section class="card">
-          <div class="card-h">
-            <div>
-              <h2>${dir.label} • รอบเวลา <span style="color:var(--gold2)">${escapeHtml(baseTime)}</span></h2>
-              <p class="hint">เลือก ${escapeHtml(dir.selectLabel)} ก่อน แล้วระบบจะแสดงเวลาถึง</p>
-            </div>
-            <div class="row">
-              <button class="btn" onclick="window.__back()">ย้อนกลับ</button>
-            </div>
-          </div>
-
-          <div class="card-b" style="max-width: 860px;">
-            <div class="row" style="gap: 12px;">
-              <div class="field" style="flex: 1 1 360px;">
-                <label for="place">${escapeHtml(dir.selectLabel)}</label>
-                <select id="place">
-                  <option value="">— โปรดเลือก —</option>
-                  ${options}
-                </select>
-              </div>
-              <div class="field" style="flex: 1 1 260px;">
-                <label>เวลาถึงโดยประมาณ</label>
-                <input id="arrival" readonly value="—" />
-              </div>
-            </div>
-
-            <div class="note" id="routeNote">เลือก ${escapeHtml(dir.selectLabel)} เพื่อคำนวณเวลา</div>
-
-            <div class="divider"></div>
-
-            <div class="row" style="gap: 12px;">
-              <div class="field" style="flex: 1 1 260px;">
-                <label for="room">เลขห้อง</label>
-                <input id="room" autocomplete="off" placeholder="เช่น A105" />
-              </div>
-              <div class="field" style="flex: 0 0 240px;">
-                <label for="pax">จำนวนคน</label>
-                <input id="pax" type="number" min="1" step="1" inputmode="numeric" placeholder="เช่น 2" />
-              </div>
-            </div>
-
-            <div style="height: 12px"></div>
-
-            <div class="row">
-              <button id="btnBook" class="btn primary" onclick="window.__book()">จอง</button>
-              <button class="btn danger" onclick="window.__cancel()">ยกเลิกการจอง</button>
-              <span class="badge"><span class="dot"></span> 1 ห้อง/1 รอบ จองได้ครั้งเดียว</span>
-            </div>
-
-            <div class="mini" id="mini"></div>
-            <div class="note" id="note"></div>
-
-            <div class="divider"></div>
-
-            <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
-              <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
-                <div>
-                  <h2 style="font-size: 15.5px;">รายการจองในรอบนี้</h2>
-                  <p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาถึง</p>
-                </div>
-              </div>
-              <div class="card-b" id="bookingsTable"></div>
-            </div>
-          </div>
-        </section>
-      `;
-
-      const placeEl = document.getElementById("place");
-      const arrivalEl = document.getElementById("arrival");
-      const routeNoteEl = document.getElementById("routeNote");
-      const roomEl = document.getElementById("room");
-      const paxEl = document.getElementById("pax");
-      const bookBtn = document.getElementById("btnBook");
-      const noteEl = document.getElementById("note");
-
-      function updateMini(){
-        const st2 = loadState();
-        const sl = st2.slots[id];
-        const closedNow = isClosedToday(baseTime);
-        const miniEl = document.getElementById("mini");
-        const bClass = sl.available===0 ? "danger" : "";
-        miniEl.innerHTML = `<b>คงเหลือ:</b> ที่นั่งว่าง <b class="${bClass}">${sl.available}</b> / ${sl.capacity}${closedNow ? ' • <span class="danger-text"><b>ปิดทำรายการแล้ว</b></span>' : ''}<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>`;
-
-        if(closedNow){
-          bookBtn.disabled = true;
-          placeEl.disabled = true;
-          roomEl.disabled = true;
-          paxEl.disabled = true;
-        }
-      }
-
-      function updateArrivalPreview(){
-        const times = calcTimes(dir.key, baseTime, placeEl.value);
-        if(!times){
-          arrivalEl.value = "—";
-          routeNoteEl.textContent = `เลือก ${dir.selectLabel} เพื่อคำนวณเวลา`;
-          return;
-        }
-        if(dir.key === "out"){
-          arrivalEl.value = `ถึง ${times.destination} ${times.arriveTime}`;
-          routeNoteEl.innerHTML = `ออกจาก <b>${escapeHtml(times.pickup)}</b> เวลา <b>${escapeHtml(times.pickupTime)}</b> • ถึง <b>${escapeHtml(times.destination)}</b> เวลา <b>${escapeHtml(times.arriveTime)}</b>`;
-        } else {
-          arrivalEl.value = `ถึง Hotel ${times.arriveTime}`;
-          routeNoteEl.innerHTML = `รับที่ <b>${escapeHtml(times.pickup)}</b> เวลา <b>${escapeHtml(times.pickupTime)}</b> • ถึง <b>Hotel</b> เวลา <b>${escapeHtml(times.arriveTime)}</b>`;
-        }
-      }
-
-      function updateBookBtn(){
-        const st2 = loadState();
-        const sl = st2.slots[id];
-        const room = (roomEl.value || "").trim();
-        const existing = room ? sl.bookings?.[room] : null;
-        const booked = existing ? (existing.pax || 0) : 0;
-
-        if(room && booked > 0){
-          bookBtn.disabled = true;
-          const placeText = (existing.pickup && existing.destination) ? `${existing.pickup} → ${existing.destination}` : "";
-          noteEl.innerHTML = `ห้อง <b>${escapeHtml(room)}</b> จองแล้ว <b>${booked}</b> คนในรอบนี้${placeText ? ` (${escapeHtml(placeText)})` : ""} — กันการกดซ้ำ`;
-        } else {
-          if(!isClosedToday(baseTime)) bookBtn.disabled = false;
-          noteEl.textContent = "";
-        }
-      }
-
-      function renderBookingsTable(){
-        const st2 = loadState();
-        const sl = st2.slots[id];
-        const entries = Object.entries(sl.bookings || {}).sort((a,b)=>a[0].localeCompare(b[0]));
-        const wrap = document.getElementById("bookingsTable");
-        if(entries.length === 0){
-          wrap.innerHTML = `<div class="mini">ยังไม่มีการจองในรอบนี้</div>`;
-          return;
-        }
-        const rows = entries.map(([room, obj]) => {
-          const pax = obj?.pax ?? "";
-          const line = (obj?.pickup && obj?.destination) ? `${obj.pickup} → ${obj.destination}` : "";
-          const arrive = obj?.arriveTime ? `ถึง ${obj.arriveTime}` : "";
-          return `<tr><td>${escapeHtml(room)}</td><td><b>${escapeHtml(pax)}</b></td><td>${escapeHtml(line)}</td><td>${escapeHtml(arrive)}</td></tr>`;
-        }).join("");
-        wrap.innerHTML = `<table><thead><tr><th>เลขห้อง</th><th>จำนวนคน</th><th>เส้นทาง</th><th>เวลาถึง</th></tr></thead><tbody>${rows}</tbody></table>`;
-      }
-
-      function refresh(){
-        updateMini();
-        updateArrivalPreview();
-        updateBookBtn();
-        renderBookingsTable();
-      }
-
-      placeEl.addEventListener("change", refresh);
-      roomEl.addEventListener("input", refresh);
-
-      window.__back = () => setHash("/");
-
-      window.__book = async () => {
-        if(closed){ toast("ปิดทำรายการแล้ว", "รอบนี้ไม่สามารถจองได้"); return; }
-
-        const placeKey = (placeEl.value || "").trim();
-        const room = (roomEl.value || "").trim();
-        const pax = Number.parseInt(paxEl.value, 10);
-
-        if(!placeKey){ toast("ข้อมูลไม่ครบ", `กรุณาเลือก ${dir.selectLabel}`); return; }
-        if(!room){ toast("ข้อมูลไม่ครบ", "กรุณาใส่เลขห้อง"); return; }
-        if(!Number.isFinite(pax) || pax <= 0){ toast("ข้อมูลไม่ครบ", "กรุณาใส่จำนวนคน"); return; }
-
-        const times = calcTimes(dir.key, baseTime, placeKey);
-        if(!times){ toast("ข้อมูลไม่ถูกต้อง", "ไม่สามารถคำนวณเวลาได้"); return; }
-
+    function updateMini(slotData) {
+      var sl = slotData;
+      var closedNow = isClosedToday(baseTime);
+      $('mini').innerHTML = '<b>คงเหลือ:</b> ที่นั่งว่าง <b class="' + (sl.available===0?'danger':'') + '">' + sl.available + '</b> / ' + sl.capacity + (closedNow ? ' • <span class="danger-text"><b>ปิดทำรายการแล้ว</b></span>' : '') + '<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>';
+      if(closedNow) {
         bookBtn.disabled = true;
-        const res = await bookSeat(id, room, pax, {
-          dir: dir.key,
-          roundBase: baseTime,
-          pickup: times.pickup,
-          destination: times.destination,
-          pickupTime: times.pickupTime,
-          arriveTime: times.arriveTime,
-          placeKey,
-        });
-        if(!res.ok){ toast("จองไม่สำเร็จ", res.msg); refresh(); return; }
-
-        toast("จองสำเร็จ", `${dir.label} • ห้อง ${room} • ${pax} คน • ถึง ${times.arriveTime}`);
-        refresh();
-      };
-
-      window.__cancel = async () => {
-        if(closed){ toast("ปิดทำรายการแล้ว", "รอบนี้ไม่สามารถยกเลิกได้"); return; }
-
-        const room = (roomEl.value || "").trim();
-        const pax = Number.parseInt(paxEl.value, 10);
-        if(!room){ toast("ข้อมูลไม่ครบ", "กรุณาใส่เลขห้อง"); return; }
-        if(!Number.isFinite(pax) || pax <= 0){ toast("ข้อมูลไม่ครบ", "กรุณาใส่จำนวนคน"); return; }
-
-        const res = await cancelSeat(id, room, pax);
-        if(!res.ok){ toast("ยกเลิกไม่สำเร็จ", res.msg); refresh(); return; }
-
-        toast("ยกเลิกสำเร็จ", `คืนที่นั่ง ${pax} คน • ห้อง ${room}`);
-        refresh();
-      };
-
-      refresh();
-    }
-
-    function viewLogs(){
-      renderNav("/logs");
-      const logs = loadLogs();
-      const d = new Date();
-      const monthKey = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
-
-      const outStats = computeStats(logs, "out", monthKey);
-      const backStats = computeStats(logs, "back", monthKey);
-
-      function barsFor(stats){
-        const maxVal = Math.max(...Object.values(stats.per));
-        return Object.entries(stats.per)
-          .sort((a,b)=>a[0].localeCompare(b[0]))
-          .map(([t,v]) => {
-            const w = maxVal ? Math.round((v/maxVal)*100) : 0;
-            return `\n<div class="bar">\n  <div class="lbl">${escapeHtml(t)}</div>\n  <div class="track"><div class="fill" style="width:${w}%"></div></div>\n  <div class="num">${v}</div>\n</div>`;
-          }).join("\n");
+        placeEl.disabled = true;
+        roomEl.disabled = true;
+        paxEl.disabled = true;
       }
-
-      const rows = logs.slice(0, 250).map((e) => {
-        const dt = new Date(e.ts);
-        const ts = Number.isFinite(dt.getTime()) ? dt.toLocaleString() : (e.ts || "");
-        const action = e.action === "BOOK"
-          ? `<span style="color:var(--ok);font-weight:900">BOOK</span>`
-          : `<span style="color:var(--danger);font-weight:900">CANCEL</span>`;
-        const dir = e.dir === "out" ? "ขาไป" : (e.dir === "back" ? "ขากลับ" : (e.dir || ""));
-        const route = (e.pickup && e.destination) ? `${e.pickup} → ${e.destination}` : "";
-        return `\n<tr>\n<td>${escapeHtml(ts)}</td>\n<td>${action}</td>\n<td>${escapeHtml(dir)}</td>\n<td>${escapeHtml(e.roundBase || "")}</td>\n<td>${escapeHtml(route)}</td>\n<td>${escapeHtml(e.arriveTime || "")}</td>\n<td>${escapeHtml(e.room || "")}</td>\n<td><b>${escapeHtml(typeof e.pax === "number" ? e.pax : "")}</b></td>\n</tr>`;
-      }).join("\n");
-
-      const el = document.getElementById("view");
-      el.innerHTML = `
-        <section class="card">
-          <div class="card-h">
-            <div>
-              <h2>บันทึก/สถิติ</h2>
-              <p class="hint">เดือน <b>${monthKey}</b> • Export Excel ได้ • แสดง Log ล่าสุด 250 รายการ</p>
-            </div>
-            <div class="row">
-              <button class="btn primary" onclick="window.__exportAll()">Export ทั้งหมด</button>
-              <button class="btn" onclick="window.__goSchedule()">กลับหน้าตาราง</button>
-            </div>
-          </div>
-
-          <div class="card-b">
-            <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14); margin-bottom: 12px;">
-              <div class="card-b">
-                <div class="row" style="align-items:flex-end; justify-content:flex-start;">
-                  <div class="field" style="max-width: 230px;">
-                    <label for="expDay">Export ตามวัน</label>
-                    <input id="expDay" type="date" />
-                  </div>
-                  <button class="btn" onclick="window.__exportDayFromInput()">Export วัน</button>
-                  <div class="field" style="max-width: 230px;">
-                    <label for="expMonth">Export ตามเดือน</label>
-                    <input id="expMonth" type="month" />
-                  </div>
-                  <button class="btn" onclick="window.__exportMonthFromInput()">Export เดือน</button>
-                  <button class="btn primary" onclick="window.__exportAll()">Export ทั้งหมด</button>
-                </div>
-                <div class="mini">Export วัน = เฉพาะวันที่เลือก • Export เดือน = เฉพาะเดือนที่เลือก</div>
-              </div>
-            </div>
-
-            <div class="grid">
-              <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
-                <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
-                  <div>
-                    <h2 style="font-size: 15.5px;">สถิติ • ขาไป</h2>
-                    <p class="hint">เวลาที่จองเยอะสุด: <b>${outStats.topTime || "—"}</b> (${outStats.topValue} คน)</p>
-                  </div>
-                </div>
-                <div class="card-b"><div class="barwrap">${barsFor(outStats)}</div></div>
-              </div>
-
-              <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
-                <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
-                  <div>
-                    <h2 style="font-size: 15.5px;">สถิติ • ขากลับ</h2>
-                    <p class="hint">เวลาที่จองเยอะสุด: <b>${backStats.topTime || "—"}</b> (${backStats.topValue} คน)</p>
-                  </div>
-                </div>
-                <div class="card-b"><div class="barwrap">${barsFor(backStats)}</div></div>
-              </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th>เวลา</th>
-                  <th>Action</th>
-                  <th>ขา</th>
-                  <th>รอบ</th>
-                  <th>เส้นทาง</th>
-                  <th>ถึง</th>
-                  <th>ห้อง</th>
-                  <th>คน</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows || `<tr><td colspan="8" class="mini">ยังไม่มี Log</td></tr>`}
-              </tbody>
-            </table>
-
-            <div class="mini">Log ทั้งหมด: ${logs.length} รายการ</div>
-          </div>
-        </section>
-      `;
-
-      const dayEl = document.getElementById("expDay");
-      const monthEl = document.getElementById("expMonth");
-      if(dayEl) dayEl.value = todayKey();
-      if(monthEl) monthEl.value = currentMonthKey();
-
-      window.__exportDayFromInput = () => exportLogsExcel("day", (dayEl && dayEl.value) ? dayEl.value : todayKey());
-      window.__exportMonthFromInput = () => exportLogsExcel("month", (monthEl && monthEl.value) ? monthEl.value : currentMonthKey());
-
-      window.__exportDay = () => exportLogsExcel("day", todayKey());
-      window.__exportMonth = () => exportLogsExcel("month", currentMonthKey());
-      window.__exportAll = () => exportLogsExcel("all");
-      window.__goSchedule = () => setHash("/");
     }
 
-    function render(){
-      const { path, params } = parseHash();
-      if(path === "/logs") return viewLogs();
-      if(path === "/book"){
-        const dir = params.get("dir") || "out";
-        const t = params.get("time") || "";
-        return viewBooking(dir === "back" ? "back" : "out", t);
-      }
-      return viewSchedule();
-    }
-
-    async function boot(){
-      // Try Firebase first; fallback to local on failure.
-      const ok = await initFirebase();
-
-      // Wait a little for first snapshots (so UI doesn't flash empty)
-      if(ok){
-        try{
-          await Promise.race([
-            Promise.all([fbStateReady, fbLogsReady]),
-            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 2500))
-          ]);
-        }catch{
-          // continue anyway
-        }
+    function updateBookBtn(slotData) {
+      var room = String(roomEl.value||'').trim();
+      if(!room) { if(!isClosedToday(baseTime)) bookBtn.disabled = false; noteEl.textContent=''; return; }
+      var roomK = safeKey(room);
+      var ex = slotData.bookings && slotData.bookings[roomK];
+      var booked = ex ? (ex.pax||0) : 0;
+      if(booked > 0) {
+        bookBtn.disabled = true;
+        var placeText = (ex.pickup && ex.destination) ? (ex.pickup + ' → ' + ex.destination) : '';
+        noteEl.innerHTML = 'ห้อง <b>' + escapeHtml(room) + '</b> จองแล้ว <b>' + booked + '</b> คนในรอบนี้' + (placeText ? (' (' + escapeHtml(placeText) + ')') : '') + ' — กันการกดซ้ำ';
       } else {
-        setStatusLine("โหมด Local (ยังไม่ได้เชื่อม Firebase)");
+        if(!isClosedToday(baseTime)) bookBtn.disabled = false;
+        noteEl.textContent = '';
       }
-
-      if(!location.hash) location.hash = "#/";
-      window.addEventListener("hashchange", render);
-      render();
     }
 
-    boot();</script>
+    async function refresh() {
+      var sl = await storage.getSlot(date, dir.key, baseTime);
+      updateArrival();
+      updateMini(sl);
+      updateBookBtn(sl);
+      renderBookings(sl);
+      return sl;
+    }
+
+    placeEl.addEventListener('change', function(){ updateArrival(); });
+    roomEl.addEventListener('input', function(){ refresh().catch(console.error); });
+
+    window.__back = function(){ setHash('/'); };
+
+    window.__book = async function(){
+      if(closed) { toast('ปิดทำรายการแล้ว','รอบนี้ไม่สามารถจองได้'); return; }
+      var placeKey = String(placeEl.value||'').trim();
+      var room = String(roomEl.value||'').trim();
+      var pax = parseInt(paxEl.value,10);
+      if(!placeKey) { toast('ข้อมูลไม่ครบ','กรุณาเลือก ' + dir.selectLabel); return; }
+      if(!room) { toast('ข้อมูลไม่ครบ','กรุณาใส่เลขห้อง'); return; }
+      if(!Number.isFinite(pax) || pax<=0) { toast('ข้อมูลไม่ครบ','กรุณาใส่จำนวนคน'); return; }
+      var t = calcTimes(dir.key, baseTime, placeKey);
+      if(!t) { toast('ข้อมูลไม่ถูกต้อง','ไม่สามารถคำนวณเวลาได้'); return; }
+
+      bookBtn.disabled = true;
+      var res = await storage.book(date, dir.key, baseTime, room, pax, placeKey, t);
+      if(!res.ok) { toast('จองไม่สำเร็จ', res.msg||''); await refresh(); return; }
+      toast('จองสำเร็จ', dir.label + ' • ห้อง ' + room + ' • ' + pax + ' คน • ถึง ' + t.arriveTime);
+      await refresh();
+    };
+
+    window.__cancel = async function(){
+      if(closed) { toast('ปิดทำรายการแล้ว','รอบนี้ไม่สามารถยกเลิกได้'); return; }
+      var room = String(roomEl.value||'').trim();
+      var pax = parseInt(paxEl.value,10);
+      if(!room) { toast('ข้อมูลไม่ครบ','กรุณาใส่เลขห้อง'); return; }
+      if(!Number.isFinite(pax) || pax<=0) { toast('ข้อมูลไม่ครบ','กรุณาใส่จำนวนคน'); return; }
+      var res = await storage.cancel(date, dir.key, baseTime, room, pax);
+      if(!res.ok) { toast('ยกเลิกไม่สำเร็จ', res.msg||''); await refresh(); return; }
+      toast('ยกเลิกสำเร็จ', 'คืนที่นั่ง ' + pax + ' คน • ห้อง ' + room);
+      await refresh();
+    };
+
+    await refresh();
+  }
+
+  async function viewLogs() {
+    renderNav('/logs');
+    var monthKey = currentMonthKey();
+    var stats = await storage.getStatsMonth(monthKey);
+
+    function val(dirKey, t) {
+      var k = timeKey(t);
+      return (stats[dirKey] && typeof stats[dirKey][k] === 'number') ? stats[dirKey][k] : 0;
+    }
+
+    var outTop = { time:null, value:0 };
+    DIRS.out.baseTimes.forEach(function(t){ var v = val('out',t); if(v>outTop.value) outTop={time:t,value:v}; });
+    var backTop = { time:null, value:0 };
+    DIRS.back.baseTimes.forEach(function(t){ var v = val('back',t); if(v>backTop.value) backTop={time:t,value:v}; });
+
+    var recent = await storage.queryLogs({ mode:'all', limit: 250 });
+
+    function buildBars(map, times) {
+      map = map || {};
+      var maxVal = 0;
+      times.forEach(function(t){ var v = map[timeKey(t)] || 0; if(v>maxVal) maxVal=v; });
+      return times.map(function(t){
+        var v = map[timeKey(t)] || 0;
+        var w = maxVal ? Math.round((v/maxVal)*100) : 0;
+        return '<div class="bar">' +
+          '<div class="lbl">'+escapeHtml(t)+'</div>' +
+          '<div class="track"><div class="fill" style="width:'+w+'%"></div></div>' +
+          '<div class="num">'+v+'</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    var rows = recent.map(function(e){
+      var ts = e.tsMs ? new Date(e.tsMs).toLocaleString() : '';
+      var action = (e.action === 'BOOK')
+        ? '<span style="color:var(--ok);font-weight:900">BOOK</span>'
+        : '<span style="color:var(--danger);font-weight:900">CANCEL</span>';
+      var dir = e.dir === 'out' ? 'ขาไป' : (e.dir === 'back' ? 'ขากลับ' : (e.dir||''));
+      var route = (e.pickup && e.destination) ? (e.pickup + ' → ' + e.destination) : '';
+      return '<tr>'+
+        '<td>'+escapeHtml(ts)+'</td>'+
+        '<td>'+action+'</td>'+
+        '<td>'+escapeHtml(dir)+'</td>'+
+        '<td>'+escapeHtml(e.time||'')+'</td>'+
+        '<td>'+escapeHtml(route)+'</td>'+
+        '<td>'+escapeHtml(e.arriveTime||'')+'</td>'+
+        '<td>'+escapeHtml(e.room||'')+'</td>'+
+        '<td><b>'+escapeHtml((typeof e.pax==='number')?e.pax:(e.pax||''))+'</b></td>'+
+      '</tr>';
+    }).join('\n');
+
+    $('view').innerHTML =
+      '<section class="card">' +
+        '<div class="card-h">' +
+          '<div><h2>บันทึก/สถิติ</h2><p class="hint">เดือน <b>'+escapeHtml(monthKey)+'</b> • Export แยก วัน/เดือน/ทั้งหมด ได้</p></div>' +
+          '<div class="row"><button class="btn ghost" onclick="window.__goSchedule()">กลับหน้าตาราง</button></div>' +
+        '</div>' +
+        '<div class="card-b">' +
+          '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14); margin-bottom: 12px;">' +
+            '<div class="card-b">' +
+              '<div class="row" style="align-items:flex-end; justify-content:space-between">' +
+                '<div class="row" style="flex:1;">' +
+                  '<div class="field" style="max-width:230px"><label for="expDay">Export ตามวัน</label><input id="expDay" type="date" /></div>' +
+                  '<button class="btn" onclick="window.__exportDayFromInput()">Export วัน</button>' +
+                  '<div class="field" style="max-width:230px"><label for="expMonth">Export ตามเดือน</label><input id="expMonth" type="month" /></div>' +
+                  '<button class="btn" onclick="window.__exportMonthFromInput()">Export เดือน</button>' +
+                '</div>' +
+                '<div class="row"><button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button></div>' +
+              '</div>' +
+              '<div class="mini">หมายเหตุ: Export วัน/เดือน จะดึง log จาก Firebase ตามช่วงเวลา • ถ้าข้อมูลเยอะอาจใช้เวลาสักครู่</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="grid">' +
+            '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
+              '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">สถิติ • ขาไป</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(outTop.time||'—')+'</b> ('+outTop.value+' คน)</p></div></div>' +
+              '<div class="card-b">'+ buildBars(stats.out, DIRS.out.baseTimes) +'</div>' +
+            '</div>' +
+            '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
+              '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">สถิติ • ขากลับ</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(backTop.time||'—')+'</b> ('+backTop.value+' คน)</p></div></div>' +
+              '<div class="card-b">'+ buildBars(stats.back, DIRS.back.baseTimes) +'</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="divider"></div>' +
+
+          '<table>' +
+            '<thead><tr><th>เวลา</th><th>Action</th><th>ขา</th><th>รอบ</th><th>เส้นทาง</th><th>ถึง</th><th>ห้อง</th><th>คน</th></tr></thead>' +
+            '<tbody>' + (rows || '<tr><td colspan="8" class="mini">ยังไม่มี Log</td></tr>') + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</section>';
+
+    var dayEl = $('expDay');
+    var monthEl = $('expMonth');
+    if(dayEl) dayEl.value = todayKey();
+    if(monthEl) monthEl.value = currentMonthKey();
+
+    window.__exportDayFromInput = function(){
+      var v = (dayEl && dayEl.value) ? dayEl.value : todayKey();
+      doExport('day', v).catch(console.error);
+    };
+    window.__exportMonthFromInput = function(){
+      var v = (monthEl && monthEl.value) ? monthEl.value : currentMonthKey();
+      doExport('month', v).catch(console.error);
+    };
+    window.__exportAll = function(){ doExport('all','').catch(console.error); };
+
+    window.__goSchedule = function(){ setHash('/'); };
+  }
+
+  // ============================
+  // Router
+  // ============================
+  async function render() {
+    var h = parseHash();
+    if(h.path === '/logs') return viewLogs();
+    if(h.path === '/book') {
+      var dir = h.params.get('dir') || 'out';
+      var t = h.params.get('time') || '';
+      return viewBooking(dir==='back'?'back':'out', t);
+    }
+    return viewSchedule();
+  }
+
+  // ============================
+  // Init
+  // ============================
+  async function boot() {
+    if(!location.hash) location.hash = '#/';
+    await storage.initFirebase(); // try firebase first
+    window.addEventListener('hashchange', function(){ render().catch(console.error); });
+    render().catch(console.error);
+  }
+
+  boot().catch(console.error);
+
+})();
+</script>
 </body>
 </html>
