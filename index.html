@@ -527,6 +527,25 @@
       return code === 'resource-exhausted' || msg.includes('Quota') || msg.includes('resource-exhausted') || msg.includes('429');
     }
 
+
+    function normalizeSlotData(data) {
+      data = data || {};
+      // ensure bookings is a plain object
+      if(!data.bookings || typeof data.bookings !== 'object' || Array.isArray(data.bookings)) data.bookings = {};
+      var b = data.bookings;
+
+      // Some legacy writes may have stored bookings as top-level fields like "bookings.A105"
+      // Reconstruct them into data.bookings so the UI can show booked rooms.
+      var keys = Object.keys(data);
+      for(var i=0;i<keys.length;i++) {
+        var k = keys[i];
+        if(k.indexOf('bookings.') === 0) {
+          var rk = k.slice('bookings.'.length);
+          if(rk && b[rk] === undefined && data[k] !== undefined) b[rk] = data[k];
+        }
+      }
+      return data;
+    }
     async function getSlot(dateStr, dirKey, timeStr) {
       var id = slotDocId(dateStr, dirKey, timeStr);
 
@@ -551,7 +570,9 @@
           def.updatedAt = null;
           return def;
         }
-        return Object.assign({}, snap.data());
+        var data = Object.assign({}, snap.data());
+        data = normalizeSlotData(data);
+        return data;
       } catch(e) {
         console.error(e);
         if(isQuotaError(e)) {
@@ -633,10 +654,8 @@
             tsMs: Date.now()
           };
 
-          var upd = {};
-          upd.available = available - pax;
-          upd.updatedAt = fs.serverTimestamp();
-          upd['bookings.' + roomK] = bookingObj;
+          var upd = { available: (available - pax), updatedAt: fs.serverTimestamp(), bookings: {} };
+          upd.bookings[roomK] = bookingObj;
           tx.set(slotRef, upd, { merge: true });
 
           var statField = dirKey + '.' + timeKey(timeStr);
@@ -721,7 +740,7 @@
           upd.updatedAt = fs.serverTimestamp();
           if(left === 0) upd['bookings.'+roomK] = fs.deleteField();
           else upd['bookings.'+roomK+'.pax'] = left;
-          tx.set(slotRef, upd, { merge:true });
+          tx.update(slotRef, upd);
 
           var statUpd2 = {}; statUpd2['meta.logs'] = fs.increment(1); statUpd2['meta.cancelEntries'] = fs.increment(1); statUpd2.updatedAt = fs.serverTimestamp();
           tx.set(statsRef, statUpd2, { merge:true });
