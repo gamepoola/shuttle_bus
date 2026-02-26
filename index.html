@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laya shuttle bus</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAT4AAACfCAMAAABX0UX9AAAAclBMVEUAAAD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////14gGCAAAAJXRSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyB2XW8AAAGbSURBVHja7dpxcoMgEIXhR4mO9v9f2J2o1hYpQGmQK4x8uM0T9qkLZz0mI7bqZQAAAAAAAAAAAAAAAAAAAAAAAKBqvHcQqY8e1b7FQJv0wG9w7b8z8cG6YvVn7Q2E0cZ+Xb5Wm8mCk0dSxC6r3q1g7uQ3yZPqgZp9lK9H3qf0gCwYk8n3lQmV8hQ+1Qp9k6q2yqg8y8y6R0mQ4wGQYd9qkK1r3Q8e6uGm0B7qfQ7Jm2p5FzWbJc0jzU4YbqQy3hVg5a0m0j5yqS3qfZc9eX9V7nJ0lZ3Vf5c3z1pY3qXKc0g8m8y2fQxY6b0l9u7S8bT0pQk6c3bZrF9m2uZrYbWJ7g8m0o7cV7cQf8OZ8e6m7KZQw9eQdYc3fQ9Qf9m9V7sV1w0aY2Z1W1qkqg7r6F0mJ0m9o8c3m7f7mO2pG2mXx0r7qvZQAAAAAAAAAAAAAAAAAAAAAAAPw2vQG0mQX9h6FhAAAAAElFTkSuQmCC">
+  <style>
+    :root{
+      --bg1:#07121f; --bg2:#0b1a2a;
+      --text:#f5f0e6; --muted:#cbbfae;
+      --gold:#836A45;
+      --gold2:#B0A390;
+      --ok:#22c55e;
+      --danger:#ff5a5f;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --line: rgba(131,106,69,.22);
+      --yellow:#f2c94c;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% 0%, rgba(131,106,69,.14), transparent 60%),
+        radial-gradient(900px 700px at 90% 20%, rgba(176,163,144,.10), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+    }
+
+    header{
+      position: sticky; top: 0;
+      backdrop-filter: blur(10px);
+      background: rgba(7,18,31,.65);
+      border-bottom: 1px solid var(--line);
+      z-index: 10;
+    }
+
+    .wrap{ max-width: 1120px; margin: 0 auto; padding: 18px; }
+
+    .brand{ display:flex; align-items:center; justify-content:space-between; gap: 12px; padding: 14px 18px; }
+    .brand-left{ display:flex; align-items:center; gap:12px; min-width:0; }
+
+    .mark{
+      width: 46px; height: 46px; border-radius: 16px;
+      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.14), transparent 55%),
+                  linear-gradient(135deg, rgba(131,106,69,.38), rgba(131,106,69,.08));
+      border: 1px solid rgba(131,106,69,.35);
+      box-shadow: var(--shadow);
+      display:grid; place-items:center;
+      font-weight: 900;
+      color: var(--gold2);
+      letter-spacing: .5px;
+      font-size: 18px;
+      flex: 0 0 auto;
+    }
+
+    h1{ margin:0; font-size: 20px; letter-spacing: .6px; }
+    .sub{ margin:2px 0 0 0; color: var(--muted); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70vw; }
+
+    .nav{ display:flex; gap: 10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .chip{
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(131,106,69,.22);
+      background: rgba(15,36,56,.35);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 650;
+      cursor:pointer;
+      user-select:none;
+      text-decoration:none;
+      display:inline-block;
+    }
+    .chip.active{ border-color: rgba(131,106,69,.55); background: rgba(131,106,69,.14); color: var(--gold2); }
+
+    .card{
+      background: linear-gradient(180deg, rgba(15,36,56,.78), rgba(12,29,47,.72));
+      border: 1px solid rgba(131,106,69,.18);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .card-h{
+      padding: 16px 16px 12px 16px;
+      border-bottom: 1px solid rgba(131,106,69,.16);
+      display:flex; align-items:flex-end; justify-content:space-between; gap: 12px;
+      flex-wrap:wrap;
+    }
+
+    .card-h h2{ margin:0; font-size: 17px; letter-spacing:.4px; }
+    .card-h .hint{ margin:4px 0 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+
+    .card-b{ padding: 14px 16px 16px 16px; }
+
+    .grid{ display:grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 980px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
+
+    .slots{ display:grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 640px){ .slots{ grid-template-columns: 1fr 1fr; } }
+
+    .slot{
+      display:flex; align-items:center; justify-content:space-between; gap: 12px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(131,106,69,.18);
+      background: rgba(7,18,31,.35);
+    }
+    .slot .time{ font-size: 22px; font-weight: 900; letter-spacing:.3px; }
+    .slot .seat{ font-size: 15.5px; color: var(--muted); }
+    .slot .seat b{ font-size: 20px; color: var(--ok); }
+    .slot .seat b.danger{ color: var(--danger); }
+    .slot .meta{ display:flex; flex-direction:column; gap: 6px; min-width:0; }
+
+    .badge{
+      display:inline-flex; align-items:center; gap: 8px;
+      padding: 8px 11px; border-radius: 999px;
+      background: rgba(131,106,69,.10);
+      border: 1px solid rgba(131,106,69,.20);
+      color: var(--muted); font-size: 13.5px; font-weight: 650;
+    }
+    .dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
+
+    .btn{
+      appearance:none; border: 1px solid rgba(131,106,69,.35);
+      background: rgba(131,106,69,.14);
+      color: var(--gold2);
+      padding: 11px 14px;
+      border-radius: 16px;
+      font-weight: 850;
+      letter-spacing: .2px;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+      user-select:none;
+      min-width: 110px;
+      text-align:center;
+      font-size: 15px;
+    }
+    .btn:hover{ border-color: rgba(131,106,69,.6); background: rgba(131,106,69,.18); }
+    .btn:active{ transform: translateY(1px); }
+    .btn:disabled{ opacity: .55; cursor:not-allowed; transform:none; }
+
+    .btn.primary{ background: linear-gradient(135deg, rgba(131,106,69,.22), rgba(131,106,69,.12)); border-color: rgba(131,106,69,.55); color: var(--text); }
+    /* ✅ Yellow for “เลือก” button on schedule */
+    .btn.pick{
+      background: linear-gradient(135deg, rgba(242,201,76,.95), rgba(242,201,76,.60));
+      border-color: rgba(242,201,76,.85);
+      color: #0b1a2a;
+    }
+    .btn.pick:hover{
+      background: linear-gradient(135deg, rgba(242,201,76,1), rgba(242,201,76,.70));
+      border-color: rgba(242,201,76,1);
+    }
+
+    .btn.danger{ background: rgba(255,90,95,.10); border-color: rgba(255,90,95,.45); color: #ffb0b3; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-start; }
+
+    .field{ display:flex; flex-direction:column; gap:6px; width: 100%; }
+    label{ color: var(--muted); font-size: 13.5px; font-weight: 650; }
+    input, select{
+      width: 100%;
+      padding: 13px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(131,106,69,.18);
+      background: rgba(7,18,31,.35);
+      color: var(--text);
+      outline:none;
+      font-size: 17px;
+      font-weight: 650;
+    }
+    select{ cursor:pointer; }
+    input:focus, select:focus{ border-color: rgba(131,106,69,.55); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
+
+    .kpi{
+      display:flex; flex-direction:column; gap: 8px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(131,106,69,.18);
+      background: rgba(7,18,31,.35);
+    }
+    .kpi .big{ font-size: 30px; font-weight: 950; letter-spacing:.2px; color: var(--gold2); }
+    .kpi .small{ color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+
+    .mini{
+      margin-top: 10px;
+      border-top: 1px solid rgba(131,106,69,.16);
+      padding-top: 10px;
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+
+    .divider{ height:1px; background: rgba(131,106,69,.16); margin: 12px 0; }
+
+    table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 18px; border: 1px solid rgba(131,106,69,.18); background: rgba(7,18,31,.25); }
+    th, td{ padding: 11px 11px; font-size: 13px; border-bottom: 1px solid rgba(131,106,69,.14); text-align:left; }
+    th{ color: var(--muted); font-weight: 800; }
+    tr:last-child td{ border-bottom:none; }
+
+    .barwrap{ display:grid; gap: 8px; }
+    .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(7,18,31,.25); }
+    .bar .lbl{ width: 66px; color: var(--muted); font-size: 13.5px; font-weight: 700; }
+    .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.10); overflow:hidden; }
+    .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.60), rgba(176,163,144,.22)); }
+    .bar .num{ width: 62px; text-align:right; color: var(--gold2); font-weight: 900; font-size: 13.5px; }
+
+    .footer-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(7,18,31,.88);
+      border: 1px solid rgba(131,106,69,.25);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      border-radius: 18px;
+      max-width: 92vw;
+      width: 620px;
+      display:none;
+      z-index: 30;
+    }
+    .toast.show{ display:block; animation: pop .12s ease-out; }
+    @keyframes pop{ from{ transform: translateX(-50%) translateY(6px); opacity:.0; } to{ transform: translateX(-50%) translateY(0); opacity:1; } }
+    .toast .t{ font-weight: 900; color: var(--text); font-size: 15.5px; }
+    .toast .d{ color: var(--muted); font-size: 13.5px; margin-top: 4px; line-height: 1.5; }
+
+    .note{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(131,106,69,.18);
+      background: rgba(7,18,31,.25);
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    .danger-text{ color: #ffb0b3; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap brand">
+      <div class="brand-left">
+        <div class="mark">L</div>
+        <div style="min-width:0">
+          <h1>Laya shuttle bus</h1>
+          <p class="sub">Local: ข้อมูลที่นั่ง + Log อยู่ในเครื่องนี้ (Export เป็น Excel ได้)</p>
+        </div>
+      </div>
+      <nav class="nav" id="nav"></nav>
+    </div>
+  </header>
+
+  <main class="wrap" id="view"></main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <div class="t" id="toastTitle"></div>
+    <div class="d" id="toastDesc"></div>
+  </div>
+
+  <script>
+    const CAPACITY_PER_TRIP = 20;
+
+    const LS_STATE = "laya_shuttle_state_v4";
+    const LS_LOGS  = "laya_shuttle_logs_v4";
+    const LS_UI    = "laya_shuttle_ui_v4";
+
+    const DIRS = {
+      out: {
+        key: "out",
+        label: "ขาไป",
+        baseTimes: ["11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"],
+        timeline: [
+          { key:"HOTEL", name:"Hotel", offset: 0 },
+          { key:"LAYAN", name:"Layan National Park", offset: 5 },
+          { key:"LEPHANG", name:"Le Phang Beach", offset: 10 },
+          { key:"BOAT", name:"Boat Avenue", offset: 20 },
+        ],
+        selectLabel: "จุดหมายปลายทาง",
+        selectable: [
+          { key:"LAYAN", name:"Layan National Park" },
+          { key:"LEPHANG", name:"Le Phang Beach" },
+          { key:"BOAT", name:"Boat Avenue" },
+        ],
+      },
+      back: {
+        key: "back",
+        label: "ขากลับ",
+        baseTimes: ["11:30","12:30","13:30","14:30","15:30","16:30","17:30","18:30"],
+        timeline: [
+          { key:"BOAT", name:"Boat Avenue", offset: 0 },
+          { key:"LEPHANG", name:"Le Phang Beach", offset: 10 },
+          { key:"LAYAN", name:"Layan National Park", offset: 15 },
+          { key:"HOTEL", name:"Hotel", offset: 20 },
+        ],
+        selectLabel: "จุดรับขึ้นรถ",
+        selectable: [
+          { key:"BOAT", name:"Boat Avenue" },
+          { key:"LEPHANG", name:"Le Phang Beach" },
+          { key:"LAYAN", name:"Layan National Park" },
+        ],
+      }
+    };
+
+    const pad2 = (n) => String(n).padStart(2, "0");
+    function timeToMin(t){
+      const [h,m] = String(t).split(":").map(Number);
+      return (h*60) + m;
+    }
+    function minToTime(min){
+      const m = ((min % (24*60)) + (24*60)) % (24*60);
+      const h = Math.floor(m/60);
+      const mm = m%60;
+      return `${pad2(h)}:${pad2(mm)}`;
+    }
+    function addMin(t, delta){ return minToTime(timeToMin(t) + delta); }
+
+    function todayKey(){
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    }
+    function currentMonthKey(){
+      const d = new Date();
+      return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+    }
+    function nowMin(){
+      const d = new Date();
+      return d.getHours()*60 + d.getMinutes();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function toast(title, desc=""){
+      const el = document.getElementById("toast");
+      document.getElementById("toastTitle").textContent = title;
+      document.getElementById("toastDesc").textContent = desc;
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    function parseHash(){
+      const raw = location.hash || "#/";
+      const parts = raw.replace(/^#/, "").split("?");
+      const path = parts[0];
+      const params = new URLSearchParams(parts[1] || "");
+      return { path, params };
+    }
+    function setHash(path){ location.hash = `#${path}`; }
+
+    function downloadBlob(filename, mime, content){
+      const blob = new Blob([content], { type: mime });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function monthKeyFromISO(iso){
+      try {
+        const d = new Date(iso);
+        if(!Number.isFinite(d.getTime())) return "";
+        return `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+      } catch { return ""; }
+    }
+
+    function slotId(dirKey, baseTime){ return `${dirKey}|${baseTime}`; }
+
+    function buildDefaultState(){
+      const date = todayKey();
+      const slots = {};
+      for(const dirKey of Object.keys(DIRS)){
+        for(const t of DIRS[dirKey].baseTimes){
+          slots[slotId(dirKey, t)] = { capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+        }
+      }
+      return { version: 4, date, slots };
+    }
+
+    function loadState(){
+      try {
+        const base = buildDefaultState();
+        const raw = localStorage.getItem(LS_STATE);
+        if(!raw) return base;
+        const parsed = JSON.parse(raw);
+        if(!parsed || parsed.date !== base.date) return base;
+
+        const merged = { ...base, ...parsed, slots: { ...base.slots, ...(parsed.slots || {}) } };
+        for(const id of Object.keys(base.slots)){
+          const s = merged.slots[id];
+          if(!s || typeof s.available !== "number") merged.slots[id] = base.slots[id];
+          if(!merged.slots[id].bookings) merged.slots[id].bookings = {};
+          if(!merged.slots[id].capacity) merged.slots[id].capacity = CAPACITY_PER_TRIP;
+          merged.slots[id].available = Math.max(0, Math.min(merged.slots[id].capacity, merged.slots[id].available));
+        }
+        return merged;
+      } catch {
+        return buildDefaultState();
+      }
+    }
+
+    function saveState(st){ localStorage.setItem(LS_STATE, JSON.stringify(st)); }
+
+    function loadLogs(){
+      try {
+        const raw = localStorage.getItem(LS_LOGS);
+        if(!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch { return []; }
+    }
+
+    function addLog(entry){
+      const logs = loadLogs();
+      logs.unshift(entry);
+      localStorage.setItem(LS_LOGS, JSON.stringify(logs));
+    }
+
+    function loadUi(){
+      try {
+        const raw = localStorage.getItem(LS_UI);
+        if(!raw) return { dir: "out" };
+        const parsed = JSON.parse(raw);
+        return { dir: (parsed.dir === "back") ? "back" : "out" };
+      } catch { return { dir: "out" }; }
+    }
+
+    function saveUi(ui){ localStorage.setItem(LS_UI, JSON.stringify(ui)); }
+
+    function isClosedToday(baseTime){ return nowMin() >= timeToMin(baseTime); }
+
+    function bookSeat(slotIdStr, room, pax, meta){
+      const st = loadState();
+      const slot = st.slots[slotIdStr];
+      if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
+
+      const existing = slot.bookings[room];
+      if(existing && existing.pax > 0){
+        return { ok:false, msg:`ห้องนี้จองแล้ว ${existing.pax} คน (กันการกดซ้ำ)` };
+      }
+      if(pax > slot.available) return { ok:false, msg:"ที่นั่งไม่พอสำหรับจำนวนคนที่เลือก" };
+
+      slot.bookings[room] = { pax, ...meta };
+      slot.available -= pax;
+      saveState(st);
+
+      addLog({
+        ts: new Date().toISOString(),
+        date: st.date,
+        action: "BOOK",
+        slotId: slotIdStr,
+        dir: meta.dir,
+        roundBase: meta.roundBase,
+        pickup: meta.pickup,
+        destination: meta.destination,
+        pickupTime: meta.pickupTime,
+        arriveTime: meta.arriveTime,
+        room,
+        pax
+      });
+      return { ok:true };
+    }
+
+    function cancelSeat(slotIdStr, room, pax){
+      const st = loadState();
+      const slot = st.slots[slotIdStr];
+      if(!slot) return { ok:false, msg:"ไม่พบรอบเวลานี้" };
+
+      const existing = slot.bookings[room];
+      const booked = existing ? (existing.pax || 0) : 0;
+      if(booked <= 0) return { ok:false, msg:"เลขห้องนี้ยังไม่มีการจองในรอบนี้" };
+      if(pax > booked) return { ok:false, msg:`ยกเลิกเกินจำนวนที่จองไว้ (จองไว้ ${booked} คน)` };
+
+      const left = booked - pax;
+      if(left === 0) delete slot.bookings[room];
+      else slot.bookings[room].pax = left;
+
+      slot.available = Math.min(slot.capacity, slot.available + pax);
+      saveState(st);
+
+      addLog({
+        ts: new Date().toISOString(),
+        date: st.date,
+        action: "CANCEL",
+        slotId: slotIdStr,
+        dir: existing?.dir || "",
+        roundBase: existing?.roundBase || "",
+        pickup: existing?.pickup || "",
+        destination: existing?.destination || "",
+        pickupTime: existing?.pickupTime || "",
+        arriveTime: existing?.arriveTime || "",
+        room,
+        pax
+      });
+      return { ok:true };
+    }
+
+    function calcTimes(dirKey, baseTime, placeKey){
+      const dir = DIRS[dirKey];
+      if(!dir || !placeKey) return null;
+
+      if(dirKey === "out"){
+        const dest = dir.timeline.find(x => x.key === placeKey);
+        if(!dest) return null;
+        return {
+          pickup: "Hotel",
+          destination: dest.name,
+          pickupTime: baseTime,
+          arriveTime: addMin(baseTime, dest.offset),
+        };
+      }
+
+      const pickupStop = dir.timeline.find(x => x.key === placeKey);
+      const hotelStop = dir.timeline.find(x => x.key === "HOTEL");
+      if(!pickupStop || !hotelStop) return null;
+
+      return {
+        pickup: pickupStop.name,
+        destination: "Hotel",
+        pickupTime: addMin(baseTime, pickupStop.offset),
+        arriveTime: addMin(baseTime, hotelStop.offset),
+      };
+    }
+
+    function computeStats(logs, dirKey, monthKey){
+      const per = {};
+      for(const t of DIRS[dirKey].baseTimes) per[t] = 0;
+
+      let countThisMonth = 0;
+      for(const e of logs){
+        if(!e || e.action !== "BOOK" || typeof e.pax !== "number") continue;
+        if(e.dir !== dirKey) continue;
+        if(monthKey && monthKeyFromISO(e.ts) !== monthKey) continue;
+        countThisMonth += 1;
+        if(e.roundBase) per[e.roundBase] = (per[e.roundBase] || 0) + e.pax;
+      }
+
+      const top = Object.entries(per).sort((a,b)=>b[1]-a[1])[0];
+      return {
+        per,
+        topTime: top?.[0] || null,
+        topValue: top?.[1] || 0,
+        countThisMonth,
+      };
+    }
+
+    function buildExcelHtml(logs){
+      const rows = logs.map((e) => {
+        const dt = new Date(e.ts);
+        const ts = Number.isFinite(dt.getTime()) ? dt.toLocaleString() : (e.ts || "");
+        const action = e.action || "";
+        const dir = e.dir === "out" ? "ขาไป" : (e.dir === "back" ? "ขากลับ" : (e.dir || ""));
+        const roundBase = e.roundBase || "";
+        const pickup = e.pickup || "";
+        const destination = e.destination || "";
+        const pickupTime = e.pickupTime || "";
+        const arriveTime = e.arriveTime || "";
+        const room = e.room || "";
+        const pax = (typeof e.pax === "number") ? e.pax : "";
+
+        return `\n<tr>\n<td>${escapeHtml(ts)}</td>\n<td>${escapeHtml(e.date || "")}</td>\n<td>${escapeHtml(action)}</td>\n<td>${escapeHtml(dir)}</td>\n<td>${escapeHtml(roundBase)}</td>\n<td>${escapeHtml(pickup)}</td>\n<td>${escapeHtml(destination)}</td>\n<td>${escapeHtml(pickupTime)}</td>\n<td>${escapeHtml(arriveTime)}</td>\n<td>${escapeHtml(room)}</td>\n<td>${escapeHtml(pax)}</td>\n</tr>`;
+      }).join("\\n");
+
+      return (`\n<!doctype html>\n<html>\n<head>\n<meta charset="UTF-8" />\n</head>\n<body>\n<table border="1">\n<thead>\n<tr>\n<th>Timestamp</th>\n<th>Date</th>\n<th>Action</th>\n<th>Direction</th>\n<th>Round</th>\n<th>Pickup</th>\n<th>Destination</th>\n<th>Pickup time</th>\n<th>Arrival time</th>\n<th>Room</th>\n<th>Pax</th>\n</tr>\n</thead>\n<tbody>\n${rows}\n</tbody>\n</table>\n</body>\n</html>\n`).trim();
+    }
+
+    function filterLogs(allLogs, mode, value){
+      if(mode === "day"){
+        const day = value || todayKey();
+        return allLogs.filter(e => (e?.date || "") === day);
+      }
+      if(mode === "month"){
+        const m = value || currentMonthKey();
+        return allLogs.filter(e => {
+          const byDate = (e?.date && String(e.date).length >= 7) ? String(e.date).slice(0,7) : "";
+          const mk = byDate || monthKeyFromISO(e?.ts || "");
+          return mk === m;
+        });
+      }
+      return allLogs;
+    }
+
+    function exportLogsExcel(mode="all", value=""){
+      const allLogs = loadLogs();
+      const logs = filterLogs(allLogs, mode, value);
+
+      const today = todayKey();
+      let suffix = `all-${today}`;
+      if(mode === "day") suffix = value || today;
+      if(mode === "month") suffix = value || currentMonthKey();
+
+      const html = buildExcelHtml(logs);
+      const fname = `laya-shuttle-logs-${suffix}.xls`;
+      downloadBlob(fname, "application/vnd.ms-excel;charset=utf-8", "\ufeff" + html);
+    }
+
+    function renderNav(active){
+      const nav = document.getElementById("nav");
+      nav.innerHTML = "";
+      const items = [
+        { key:"/", label:"ตารางเวลา", href:"#/" },
+        { key:"/logs", label:"บันทึก/สถิติ", href:"#/logs" },
+      ];
+      for(const it of items){
+        const a = document.createElement("a");
+        a.href = it.href;
+        a.className = `chip ${active===it.key ? "active" : ""}`;
+        a.textContent = it.label;
+        nav.appendChild(a);
+      }
+    }
+
+    function viewSchedule(){
+      renderNav("/");
+      const ui = loadUi();
+      const st = loadState();
+      const logs = loadLogs();
+
+      const dirKey = ui.dir;
+      const dir = DIRS[dirKey];
+
+      const d = new Date();
+      const monthKey = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+      const stats = computeStats(logs, dirKey, monthKey);
+
+      const cards = dir.baseTimes.map((t) => {
+        const id = slotId(dirKey, t);
+        const s = st.slots[id];
+        const closed = isClosedToday(t);
+        const btnLabel = closed ? "ปิดแล้ว" : "เลือก";
+        const btnKind = closed ? "primary" : "pick";
+        const availClass = (s.available===0) ? "danger" : "";
+        return `\n<div class="slot">\n  <div class="meta">\n    <div class="time">${escapeHtml(t)}</div>\n    <div class="seat">ที่นั่งว่าง: <b class="${availClass}">${s.available}</b> / ${s.capacity}${closed ? " • <span class=\"danger-text\">ปิดทำรายการ</span>" : ""}</div>\n  </div>\n  <button class="btn ${btnKind}" ${(closed || s.available===0) ? "disabled" : ""} onclick="window.__openBooking('${dirKey}','${t}')">${btnLabel}</button>\n</div>`;
+      }).join("\n");
+
+      const maxVal = Math.max(...Object.values(stats.per));
+      const bars = Object.entries(stats.per)
+        .sort((a,b)=>a[0].localeCompare(b[0]))
+        .map(([t,v]) => {
+          const w = maxVal ? Math.round((v/maxVal)*100) : 0;
+          return `\n<div class="bar">\n  <div class="lbl">${escapeHtml(t)}</div>\n  <div class="track"><div class="fill" style="width:${w}%"></div></div>\n  <div class="num">${v}</div>\n</div>`;
+        }).join("\n");
+
+      const el = document.getElementById("view");
+      el.innerHTML = `
+        <div class="grid">
+          <section class="card">
+            <div class="card-h">
+              <div>
+                <h2>ตารางเวลาเดินรถ</h2>
+                <p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วกด “เลือก” เพื่อไปหน้าเลือกปลายทาง/จุดรับ</p>
+              </div>
+              <div class="row">
+                <span class="badge"><span class="dot"></span> Local</span>
+                <button class="chip ${dirKey==="out"?"active":""}" onclick="window.__setDir('out')">ขาไป</button>
+                <button class="chip ${dirKey==="back"?"active":""}" onclick="window.__setDir('back')">ขากลับ</button>
+              </div>
+            </div>
+            <div class="card-b">
+              <div class="slots">${cards}</div>
+              <div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วจอง/ยกเลิกไม่ได้</div>
+            </div>
+          </section>
+
+          <aside class="card">
+            <div class="card-h">
+              <div>
+                <h2>สถิติจาก Log</h2>
+                <p class="hint">โหมด: <b>${dirKey==="out"?"ขาไป":"ขากลับ"}</b> • เดือน <b>${monthKey}</b> (ยอด BOOK รวม)</p>
+              </div>
+            </div>
+            <div class="card-b">
+              <div class="kpi">
+                <div class="big">${stats.topTime ? escapeHtml(stats.topTime) : "—"}</div>
+                <div class="small">ยอดจองรวมสูงสุด • <b>${stats.topValue}</b> คน</div>
+                <div class="divider"></div>
+                <div class="small">Log เดือนนี้โหลด: <b>${stats.countThisMonth}</b> รายการ • Log ทั้งหมด: <b>${logs.length}</b></div>
+              </div>
+              <div style="height:12px"></div>
+              <div class="barwrap">${bars}</div>
+              <div class="divider"></div>
+              <div class="footer-actions">
+                <button class="btn" onclick="window.__exportDay()">Export วันนี้</button>
+                <button class="btn" onclick="window.__exportMonth()">Export เดือนนี้</button>
+                <button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button>
+                <button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันนี้)</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      `;
+
+      window.__setDir = (d2) => {
+        const ui2 = loadUi();
+        ui2.dir = (d2 === "back") ? "back" : "out";
+        saveUi(ui2);
+        render();
+      };
+      window.__openBooking = (d2, t2) => setHash(`/book?dir=${encodeURIComponent(d2)}&time=${encodeURIComponent(t2)}`);
+      window.__exportDay = () => exportLogsExcel("day", todayKey());
+      window.__exportMonth = () => exportLogsExcel("month", currentMonthKey());
+      window.__exportAll = () => exportLogsExcel("all");
+      window.__resetSeats = () => {
+        if(!confirm("ต้องการรีเซ็ตที่นั่งของวันนี้ (ไม่ลบ Log) ใช่ไหม?")) return;
+        const st2 = buildDefaultState();
+        saveState(st2);
+        toast("รีเซ็ตที่นั่งแล้ว", `วันที่ ${st2.date}`);
+        render();
+      };
+    }
+
+    function viewBooking(dirKey, baseTime){
+      renderNav("/");
+      const st = loadState();
+      const dir = (dirKey === "back") ? DIRS.back : DIRS.out;
+      const id = slotId(dir.key, baseTime);
+      const slot = st.slots[id];
+      if(!slot){ toast("ไม่พบรอบเวลา", "กลับไปเลือกใหม่"); setHash("/"); return; }
+
+      const closed = isClosedToday(baseTime);
+      const options = dir.selectable
+        .map(p => `<option value="${escapeHtml(p.key)}">${escapeHtml(p.name)}</option>`)
+        .join("");
+
+      const el = document.getElementById("view");
+      el.innerHTML = `
+        <section class="card">
+          <div class="card-h">
+            <div>
+              <h2>${dir.label} • รอบเวลา <span style="color:var(--gold2)">${escapeHtml(baseTime)}</span></h2>
+              <p class="hint">เลือก ${escapeHtml(dir.selectLabel)} ก่อน แล้วระบบจะแสดงเวลาถึง</p>
+            </div>
+            <div class="row">
+              <button class="btn" onclick="window.__back()">ย้อนกลับ</button>
+            </div>
+          </div>
+
+          <div class="card-b" style="max-width: 860px;">
+            <div class="row" style="gap: 12px;">
+              <div class="field" style="flex: 1 1 360px;">
+                <label for="place">${escapeHtml(dir.selectLabel)}</label>
+                <select id="place">
+                  <option value="">— โปรดเลือก —</option>
+                  ${options}
+                </select>
+              </div>
+              <div class="field" style="flex: 1 1 260px;">
+                <label>เวลาถึงโดยประมาณ</label>
+                <input id="arrival" readonly value="—" />
+              </div>
+            </div>
+
+            <div class="note" id="routeNote">เลือก ${escapeHtml(dir.selectLabel)} เพื่อคำนวณเวลา</div>
+
+            <div class="divider"></div>
+
+            <div class="row" style="gap: 12px;">
+              <div class="field" style="flex: 1 1 260px;">
+                <label for="room">เลขห้อง</label>
+                <input id="room" autocomplete="off" placeholder="เช่น A105" />
+              </div>
+              <div class="field" style="flex: 0 0 240px;">
+                <label for="pax">จำนวนคน</label>
+                <input id="pax" type="number" min="1" step="1" inputmode="numeric" placeholder="เช่น 2" />
+              </div>
+            </div>
+
+            <div style="height: 12px"></div>
+
+            <div class="row">
+              <button id="btnBook" class="btn primary" onclick="window.__book()">จอง</button>
+              <button class="btn danger" onclick="window.__cancel()">ยกเลิกการจอง</button>
+              <span class="badge"><span class="dot"></span> 1 ห้อง/1 รอบ จองได้ครั้งเดียว</span>
+            </div>
+
+            <div class="mini" id="mini"></div>
+            <div class="note" id="note"></div>
+
+            <div class="divider"></div>
+
+            <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
+              <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
+                <div>
+                  <h2 style="font-size: 15.5px;">รายการจองในรอบนี้</h2>
+                  <p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาถึง</p>
+                </div>
+              </div>
+              <div class="card-b" id="bookingsTable"></div>
+            </div>
+          </div>
+        </section>
+      `;
+
+      const placeEl = document.getElementById("place");
+      const arrivalEl = document.getElementById("arrival");
+      const routeNoteEl = document.getElementById("routeNote");
+      const roomEl = document.getElementById("room");
+      const paxEl = document.getElementById("pax");
+      const bookBtn = document.getElementById("btnBook");
+      const noteEl = document.getElementById("note");
+
+      function updateMini(){
+        const st2 = loadState();
+        const sl = st2.slots[id];
+        const closedNow = isClosedToday(baseTime);
+        const miniEl = document.getElementById("mini");
+        const bClass = sl.available===0 ? "danger" : "";
+        miniEl.innerHTML = `<b>คงเหลือ:</b> ที่นั่งว่าง <b class="${bClass}">${sl.available}</b> / ${sl.capacity}${closedNow ? ' • <span class="danger-text"><b>ปิดทำรายการแล้ว</b></span>' : ''}<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>`;
+
+        if(closedNow){
+          bookBtn.disabled = true;
+          placeEl.disabled = true;
+          roomEl.disabled = true;
+          paxEl.disabled = true;
+        }
+      }
+
+      function updateArrivalPreview(){
+        const times = calcTimes(dir.key, baseTime, placeEl.value);
+        if(!times){
+          arrivalEl.value = "—";
+          routeNoteEl.textContent = `เลือก ${dir.selectLabel} เพื่อคำนวณเวลา`;
+          return;
+        }
+        if(dir.key === "out"){
+          arrivalEl.value = `ถึง ${times.destination} ${times.arriveTime}`;
+          routeNoteEl.innerHTML = `ออกจาก <b>${escapeHtml(times.pickup)}</b> เวลา <b>${escapeHtml(times.pickupTime)}</b> • ถึง <b>${escapeHtml(times.destination)}</b> เวลา <b>${escapeHtml(times.arriveTime)}</b>`;
+        } else {
+          arrivalEl.value = `ถึง Hotel ${times.arriveTime}`;
+          routeNoteEl.innerHTML = `รับที่ <b>${escapeHtml(times.pickup)}</b> เวลา <b>${escapeHtml(times.pickupTime)}</b> • ถึง <b>Hotel</b> เวลา <b>${escapeHtml(times.arriveTime)}</b>`;
+        }
+      }
+
+      function updateBookBtn(){
+        const st2 = loadState();
+        const sl = st2.slots[id];
+        const room = (roomEl.value || "").trim();
+        const existing = room ? sl.bookings?.[room] : null;
+        const booked = existing ? (existing.pax || 0) : 0;
+
+        if(room && booked > 0){
+          bookBtn.disabled = true;
+          const placeText = (existing.pickup && existing.destination) ? `${existing.pickup} → ${existing.destination}` : "";
+          noteEl.innerHTML = `ห้อง <b>${escapeHtml(room)}</b> จองแล้ว <b>${booked}</b> คนในรอบนี้${placeText ? ` (${escapeHtml(placeText)})` : ""} — กันการกดซ้ำ`;
+        } else {
+          if(!isClosedToday(baseTime)) bookBtn.disabled = false;
+          noteEl.textContent = "";
+        }
+      }
+
+      function renderBookingsTable(){
+        const st2 = loadState();
+        const sl = st2.slots[id];
+        const entries = Object.entries(sl.bookings || {}).sort((a,b)=>a[0].localeCompare(b[0]));
+        const wrap = document.getElementById("bookingsTable");
+        if(entries.length === 0){
+          wrap.innerHTML = `<div class="mini">ยังไม่มีการจองในรอบนี้</div>`;
+          return;
+        }
+        const rows = entries.map(([room, obj]) => {
+          const pax = obj?.pax ?? "";
+          const line = (obj?.pickup && obj?.destination) ? `${obj.pickup} → ${obj.destination}` : "";
+          const arrive = obj?.arriveTime ? `ถึง ${obj.arriveTime}` : "";
+          return `<tr><td>${escapeHtml(room)}</td><td><b>${escapeHtml(pax)}</b></td><td>${escapeHtml(line)}</td><td>${escapeHtml(arrive)}</td></tr>`;
+        }).join("");
+        wrap.innerHTML = `<table><thead><tr><th>เลขห้อง</th><th>จำนวนคน</th><th>เส้นทาง</th><th>เวลาถึง</th></tr></thead><tbody>${rows}</tbody></table>`;
+      }
+
+      function refresh(){
+        updateMini();
+        updateArrivalPreview();
+        updateBookBtn();
+        renderBookingsTable();
+      }
+
+      placeEl.addEventListener("change", refresh);
+      roomEl.addEventListener("input", refresh);
+
+      window.__back = () => setHash("/");
+
+      window.__book = () => {
+        if(closed){ toast("ปิดทำรายการแล้ว", "รอบนี้ไม่สามารถจองได้"); return; }
+
+        const placeKey = (placeEl.value || "").trim();
+        const room = (roomEl.value || "").trim();
+        const pax = Number.parseInt(paxEl.value, 10);
+
+        if(!placeKey){ toast("ข้อมูลไม่ครบ", `กรุณาเลือก ${dir.selectLabel}`); return; }
+        if(!room){ toast("ข้อมูลไม่ครบ", "กรุณาใส่เลขห้อง"); return; }
+        if(!Number.isFinite(pax) || pax <= 0){ toast("ข้อมูลไม่ครบ", "กรุณาใส่จำนวนคน"); return; }
+
+        const times = calcTimes(dir.key, baseTime, placeKey);
+        if(!times){ toast("ข้อมูลไม่ถูกต้อง", "ไม่สามารถคำนวณเวลาได้"); return; }
+
+        bookBtn.disabled = true;
+        const res = bookSeat(id, room, pax, {
+          dir: dir.key,
+          roundBase: baseTime,
+          pickup: times.pickup,
+          destination: times.destination,
+          pickupTime: times.pickupTime,
+          arriveTime: times.arriveTime,
+          placeKey,
+        });
+        if(!res.ok){ toast("จองไม่สำเร็จ", res.msg); refresh(); return; }
+
+        toast("จองสำเร็จ", `${dir.label} • ห้อง ${room} • ${pax} คน • ถึง ${times.arriveTime}`);
+        refresh();
+      };
+
+      window.__cancel = () => {
+        if(closed){ toast("ปิดทำรายการแล้ว", "รอบนี้ไม่สามารถยกเลิกได้"); return; }
+
+        const room = (roomEl.value || "").trim();
+        const pax = Number.parseInt(paxEl.value, 10);
+        if(!room){ toast("ข้อมูลไม่ครบ", "กรุณาใส่เลขห้อง"); return; }
+        if(!Number.isFinite(pax) || pax <= 0){ toast("ข้อมูลไม่ครบ", "กรุณาใส่จำนวนคน"); return; }
+
+        const res = cancelSeat(id, room, pax);
+        if(!res.ok){ toast("ยกเลิกไม่สำเร็จ", res.msg); refresh(); return; }
+
+        toast("ยกเลิกสำเร็จ", `คืนที่นั่ง ${pax} คน • ห้อง ${room}`);
+        refresh();
+      };
+
+      refresh();
+    }
+
+    function viewLogs(){
+      renderNav("/logs");
+      const logs = loadLogs();
+      const d = new Date();
+      const monthKey = `${d.getFullYear()}-${pad2(d.getMonth()+1)}`;
+
+      const outStats = computeStats(logs, "out", monthKey);
+      const backStats = computeStats(logs, "back", monthKey);
+
+      function barsFor(stats){
+        const maxVal = Math.max(...Object.values(stats.per));
+        return Object.entries(stats.per)
+          .sort((a,b)=>a[0].localeCompare(b[0]))
+          .map(([t,v]) => {
+            const w = maxVal ? Math.round((v/maxVal)*100) : 0;
+            return `\n<div class="bar">\n  <div class="lbl">${escapeHtml(t)}</div>\n  <div class="track"><div class="fill" style="width:${w}%"></div></div>\n  <div class="num">${v}</div>\n</div>`;
+          }).join("\n");
+      }
+
+      const rows = logs.slice(0, 250).map((e) => {
+        const dt = new Date(e.ts);
+        const ts = Number.isFinite(dt.getTime()) ? dt.toLocaleString() : (e.ts || "");
+        const action = e.action === "BOOK"
+          ? `<span style="color:var(--ok);font-weight:900">BOOK</span>`
+          : `<span style="color:var(--danger);font-weight:900">CANCEL</span>`;
+        const dir = e.dir === "out" ? "ขาไป" : (e.dir === "back" ? "ขากลับ" : (e.dir || ""));
+        const route = (e.pickup && e.destination) ? `${e.pickup} → ${e.destination}` : "";
+        return `\n<tr>\n<td>${escapeHtml(ts)}</td>\n<td>${action}</td>\n<td>${escapeHtml(dir)}</td>\n<td>${escapeHtml(e.roundBase || "")}</td>\n<td>${escapeHtml(route)}</td>\n<td>${escapeHtml(e.arriveTime || "")}</td>\n<td>${escapeHtml(e.room || "")}</td>\n<td><b>${escapeHtml(typeof e.pax === "number" ? e.pax : "")}</b></td>\n</tr>`;
+      }).join("\n");
+
+      const el = document.getElementById("view");
+      el.innerHTML = `
+        <section class="card">
+          <div class="card-h">
+            <div>
+              <h2>บันทึก/สถิติ</h2>
+              <p class="hint">เดือน <b>${monthKey}</b> • Export Excel ได้ • แสดง Log ล่าสุด 250 รายการ</p>
+            </div>
+            <div class="row">
+              <button class="btn primary" onclick="window.__exportAll()">Export ทั้งหมด</button>
+              <button class="btn" onclick="window.__goSchedule()">กลับหน้าตาราง</button>
+            </div>
+          </div>
+
+          <div class="card-b">
+            <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14); margin-bottom: 12px;">
+              <div class="card-b">
+                <div class="row" style="align-items:flex-end; justify-content:flex-start;">
+                  <div class="field" style="max-width: 230px;">
+                    <label for="expDay">Export ตามวัน</label>
+                    <input id="expDay" type="date" />
+                  </div>
+                  <button class="btn" onclick="window.__exportDayFromInput()">Export วัน</button>
+                  <div class="field" style="max-width: 230px;">
+                    <label for="expMonth">Export ตามเดือน</label>
+                    <input id="expMonth" type="month" />
+                  </div>
+                  <button class="btn" onclick="window.__exportMonthFromInput()">Export เดือน</button>
+                  <button class="btn primary" onclick="window.__exportAll()">Export ทั้งหมด</button>
+                </div>
+                <div class="mini">Export วัน = เฉพาะวันที่เลือก • Export เดือน = เฉพาะเดือนที่เลือก</div>
+              </div>
+            </div>
+
+            <div class="grid">
+              <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
+                <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
+                  <div>
+                    <h2 style="font-size: 15.5px;">สถิติ • ขาไป</h2>
+                    <p class="hint">เวลาที่จองเยอะสุด: <b>${outStats.topTime || "—"}</b> (${outStats.topValue} คน)</p>
+                  </div>
+                </div>
+                <div class="card-b"><div class="barwrap">${barsFor(outStats)}</div></div>
+              </div>
+
+              <div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">
+                <div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)">
+                  <div>
+                    <h2 style="font-size: 15.5px;">สถิติ • ขากลับ</h2>
+                    <p class="hint">เวลาที่จองเยอะสุด: <b>${backStats.topTime || "—"}</b> (${backStats.topValue} คน)</p>
+                  </div>
+                </div>
+                <div class="card-b"><div class="barwrap">${barsFor(backStats)}</div></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>เวลา</th>
+                  <th>Action</th>
+                  <th>ขา</th>
+                  <th>รอบ</th>
+                  <th>เส้นทาง</th>
+                  <th>ถึง</th>
+                  <th>ห้อง</th>
+                  <th>คน</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows || `<tr><td colspan="8" class="mini">ยังไม่มี Log</td></tr>`}
+              </tbody>
+            </table>
+
+            <div class="mini">Log ทั้งหมด: ${logs.length} รายการ</div>
+          </div>
+        </section>
+      `;
+
+      const dayEl = document.getElementById("expDay");
+      const monthEl = document.getElementById("expMonth");
+      if(dayEl) dayEl.value = todayKey();
+      if(monthEl) monthEl.value = currentMonthKey();
+
+      window.__exportDayFromInput = () => exportLogsExcel("day", (dayEl && dayEl.value) ? dayEl.value : todayKey());
+      window.__exportMonthFromInput = () => exportLogsExcel("month", (monthEl && monthEl.value) ? monthEl.value : currentMonthKey());
+
+      window.__exportDay = () => exportLogsExcel("day", todayKey());
+      window.__exportMonth = () => exportLogsExcel("month", currentMonthKey());
+      window.__exportAll = () => exportLogsExcel("all");
+      window.__goSchedule = () => setHash("/");
+    }
+
+    function render(){
+      const { path, params } = parseHash();
+      if(path === "/logs") return viewLogs();
+      if(path === "/book"){
+        const dir = params.get("dir") || "out";
+        const t = params.get("time") || "";
+        return viewBooking(dir === "back" ? "back" : "out", t);
+      }
+      return viewSchedule();
+    }
+
+    if(!location.hash) location.hash = "#/";
+    window.addEventListener("hashchange", render);
+    render();
+  </script>
+</body>
+</html>
