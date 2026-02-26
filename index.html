@@ -361,6 +361,36 @@
   }
   function isClosedToday(baseTime) { return nowMin() >= timeToMin(baseTime); }
 
+  function compareDateStr(a, b) {
+    // a,b in YYYY-MM-DD
+    if(a === b) return 0;
+    return (a < b) ? -1 : 1;
+  }
+
+  function isSlotPast(dateStr, baseTime) {
+    var today = todayKey();
+    var cmp = compareDateStr(dateStr, today);
+    if(cmp < 0) return true;         // past date
+    if(cmp > 0) return false;        // future date
+    return isClosedToday(baseTime);  // today: compare time
+  }
+
+  function slotTsMs(dateStr, timeStr) {
+    // local time timestamp for the shuttle round (pickup base time)
+    try {
+      var parts = String(dateStr).split('-');
+      var y = parseInt(parts[0],10);
+      var mo = parseInt(parts[1],10)-1;
+      var da = parseInt(parts[2],10);
+      var tm = String(timeStr).split(':');
+      var hh = parseInt(tm[0],10);
+      var mm = parseInt(tm[1],10);
+      return new Date(y, mo, da, hh, mm, 0, 0).getTime();
+    } catch(e) {
+      return Date.now();
+    }
+  }
+
   function escapeHtml(s) {
     return String(s)
       .replaceAll('&','&amp;')
@@ -462,33 +492,25 @@
   // ============================
   // Local fallback store
   // ============================
-  function buildDefaultLocalState() {
-    var date = todayKey();
-    var slots = {};
-    Object.keys(DIRS).forEach(function(dirKey){
-      DIRS[dirKey].baseTimes.forEach(function(t){
-        var id = slotDocId(date, dirKey, t);
-        slots[id] = { date: date, dir: dirKey, time: t, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
-      });
-    });
-    return { date: date, slots: slots };
+  function buildDefaultLocalSlot(dateStr, dirKey, t) {
+    return { date: dateStr, dir: dirKey, time: t, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
   }
 
   function loadLocalState() {
     try {
-      var base = buildDefaultLocalState();
       var raw = localStorage.getItem(LS_STATE);
-      if(!raw) return base;
+      if(!raw) return { slots: {} };
       var parsed = JSON.parse(raw);
-      if(!parsed || parsed.date !== base.date) return base;
-      var merged = { date: base.date, slots: Object.assign({}, base.slots, parsed.slots || {}) };
-      return merged;
+      if(!parsed || typeof parsed !== 'object') return { slots: {} };
+      if(!parsed.slots || typeof parsed.slots !== 'object' || Array.isArray(parsed.slots)) parsed.slots = {};
+      return { slots: parsed.slots };
     } catch(e) {
-      return buildDefaultLocalState();
+      return { slots: {} };
     }
   }
   function saveLocalState(st) {
-    localStorage.setItem(LS_STATE, JSON.stringify(st));
+    var slots = (st && st.slots && typeof st.slots === 'object') ? st.slots : {};
+    localStorage.setItem(LS_STATE, JSON.stringify({ slots: slots }));
   }
 
   function loadLocalLogs() {
@@ -637,7 +659,7 @@
         slot.available -= pax;
         st.slots[id] = slot;
         saveLocalState(st);
-        addLocalLog({ action:'BOOK', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, tsMs: Date.now() });
+        addLocalLog({ action:'BOOK', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, slotTsMs: slotTsMs(dateStr, timeStr), tsMs: Date.now() });
         return { ok:true };
       }
 
@@ -690,6 +712,7 @@
 tx.set(logRef, {
             action: 'BOOK', pax: pax, room: room, time: timeStr, dir: dirKey,
             date: dateStr, month: monthKey,
+            slotTsMs: slotTsMs(dateStr, timeStr),
             placeKey: placeKey,
             pickup: timesInfo.pickup, destination: timesInfo.destination,
             pickupTime: timesInfo.pickupTime, arriveTime: timesInfo.arriveTime,
@@ -729,7 +752,7 @@ tx.set(logRef, {
         else slot.bookings[roomK].pax = left;
         slot.available = Math.min(slot.capacity || CAPACITY_PER_TRIP, (slot.available || 0) + pax);
         saveLocalState(st);
-        addLocalLog({ action:'CANCEL', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, tsMs: Date.now() });
+        addLocalLog({ action:'CANCEL', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, slotTsMs: slotTsMs(dateStr, timeStr), tsMs: Date.now() });
         return { ok:true };
       }
 
@@ -835,6 +858,7 @@ tx.set(logRef, {
             dir: dirKey,
             date: dateStr,
             month: monthKey,
+            slotTsMs: slotTsMs(dateStr, timeStr),
             tsMs: Date.now(),
             ts: fs.serverTimestamp()
           });
@@ -931,6 +955,12 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         var logs = loadLocalLogs();
         if(modeQ === 'day') logs = logs.filter(function(e){ return e && e.date === opts.value; });
         if(modeQ === 'month') logs = logs.filter(function(e){ return monthKeyFromDateStr(e.date) === opts.value; });
+        // sort by shuttle time (slotTsMs) then created time (tsMs)
+        logs.sort(function(a,b){
+          var ax = (a && typeof a.slotTsMs === 'number') ? a.slotTsMs : (a && typeof a.tsMs === 'number' ? a.tsMs : 0);
+          var bx = (b && typeof b.slotTsMs === 'number') ? b.slotTsMs : (b && typeof b.tsMs === 'number' ? b.tsMs : 0);
+          return bx - ax;
+        });
         return logs.slice(0, limitN);
       }
 
@@ -938,19 +968,65 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         var fs = fb.fs;
         var db = fb.db;
         var col = fs.collection(db, COL_LOGS);
-        var q;
+        var out = [];
+
+        function pushUnique(arr, item) {
+          if(!item) return;
+          var key = String(item.action||'') + '|' + String(item.date||'') + '|' + String(item.dir||'') + '|' + String(item.time||'') + '|' + String(item.room||'') + '|' + String(item.tsMs||'');
+          if(!pushUnique._seen) pushUnique._seen = {};
+          if(pushUnique._seen[key]) return;
+          pushUnique._seen[key] = true;
+          arr.push(item);
+        }
+
         if(modeQ === 'day') {
           var r = rangeMsForDay(opts.value);
-          q = fs.query(col, fs.where('tsMs','>=',r.start), fs.where('tsMs','<',r.end), fs.orderBy('tsMs','desc'), fs.limit(limitN));
+          // Prefer querying by slotTsMs (shuttle datetime) so future bookings export correctly
+          var q1 = fs.query(col,
+            fs.where('slotTsMs','>=', r.start),
+            fs.where('slotTsMs','<',  r.end),
+            fs.orderBy('slotTsMs','desc'),
+            fs.limit(limitN)
+          );
+          var snaps1 = await fs.getDocs(q1);
+          snaps1.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+
+          // Fallback for legacy logs that don't have slotTsMs
+          if(out.length < limitN) {
+            var q2 = fs.query(col, fs.where('date','==', opts.value), fs.limit(limitN - out.length));
+            var snaps2 = await fs.getDocs(q2);
+            snaps2.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+          }
+
         } else if(modeQ === 'month') {
           var rm = rangeMsForMonth(opts.value);
-          q = fs.query(col, fs.where('tsMs','>=',rm.start), fs.where('tsMs','<',rm.end), fs.orderBy('tsMs','desc'), fs.limit(limitN));
+          var q3 = fs.query(col,
+            fs.where('slotTsMs','>=', rm.start),
+            fs.where('slotTsMs','<',  rm.end),
+            fs.orderBy('slotTsMs','desc'),
+            fs.limit(limitN)
+          );
+          var snaps3 = await fs.getDocs(q3);
+          snaps3.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+
+          if(out.length < limitN) {
+            var q4 = fs.query(col, fs.where('month','==', opts.value), fs.limit(limitN - out.length));
+            var snaps4 = await fs.getDocs(q4);
+            snaps4.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+          }
+
         } else {
-          q = fs.query(col, fs.orderBy('tsMs','desc'), fs.limit(limitN));
+          var q5 = fs.query(col, fs.orderBy('tsMs','desc'), fs.limit(limitN));
+          var snaps5 = await fs.getDocs(q5);
+          snaps5.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
         }
-        var snaps = await fs.getDocs(q);
-        var out = [];
-        snaps.forEach(function(docSnap){ out.push(docSnap.data()); });
+
+        out.sort(function(a,b){
+          var ax = (a && typeof a.slotTsMs === 'number') ? a.slotTsMs : (a && typeof a.tsMs === 'number' ? a.tsMs : 0);
+          var bx = (b && typeof b.slotTsMs === 'number') ? b.slotTsMs : (b && typeof b.tsMs === 'number' ? b.tsMs : 0);
+          return bx - ax;
+        });
+
         return out;
       } catch(e) {
         console.error(e);
@@ -961,7 +1037,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
 
     async function resetDay(dateStr) {
       if(mode !== 'firebase') {
-        var st = buildDefaultLocalState();
+        var st = loadLocalState();
+        Object.keys(DIRS).forEach(function(dirKey){
+          DIRS[dirKey].baseTimes.forEach(function(t){
+            var id = slotDocId(dateStr, dirKey, t);
+            st.slots[id] = buildDefaultLocalSlot(dateStr, dirKey, t);
+          });
+        });
         saveLocalState(st);
         return true;
       }
@@ -1023,10 +1105,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   function loadUi() {
     try {
       var raw = localStorage.getItem(LS_UI);
-      if(!raw) return { dir:'out' };
+      var today = todayKey();
+      if(!raw) return { dir:'out', date: today };
       var p = JSON.parse(raw);
-      return { dir: (p && p.dir === 'back') ? 'back' : 'out' };
-    } catch(e) { return { dir:'out' }; }
+      var dir = (p && p.dir === 'back') ? 'back' : 'out';
+      var date = (p && typeof p.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.date)) ? p.date : today;
+      return { dir: dir, date: date };
+    } catch(e) { return { dir:'out', date: todayKey() }; }
   }
   function saveUi(ui) { localStorage.setItem(LS_UI, JSON.stringify(ui)); }
 
@@ -1143,10 +1228,10 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     setStatusLine();
 
     var ui = loadUi();
-    var date = todayKey();
+    var date = ui.date || todayKey();
     var dirKey = ui.dir;
     var mode = storage.getMode();
-    var monthKey = currentMonthKey();
+    var monthKey = monthKeyFromDateStr(date);
 
     var slots = await storage.listSlots(date, dirKey);
 
@@ -1177,7 +1262,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     }).join('');
 
     var cardsHtml = slots.map(function(s){
-      var closed = isClosedToday(s.time);
+      var closed = isSlotPast(date, s.time);
       var isFull = (s.available === 0);
       // ✅ Past time: show grey style only (still clickable)
       var btnLabel = 'เลือก';
@@ -1232,6 +1317,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
           '<div class="card-h">' +
             '<div><h2>ตารางเวลาเดินรถ</h2><p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วกด “เลือก” เพื่อไปหน้าเลือกปลายทาง/จุดรับ</p></div>' +
             '<div class="row">' +
+              '<div class="field" style="width:190px;max-width:190px"><label for="datePick">วันที่เดินรถ</label><input id="datePick" type="date" value="'+escapeHtml(date)+'" min="'+escapeHtml(todayKey())+'" /></div>' +
               '<span class="pill"><span class="dot"></span> ' + (mode==='firebase' ? 'Firebase' : 'Local') + '</span>' +
               '<button class="chip ' + (dirKey==='out'?'active':'') + '" onclick="window.__setDir(\'out\')">ขาไป</button>' +
               '<button class="chip ' + (dirKey==='back'?'active':'') + '" onclick="window.__setDir(\'back\')">ขากลับ</button>' +
@@ -1244,6 +1330,20 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         right +
       '</div>';
 
+    var dp = $('datePick');
+    if(dp) {
+      dp.value = date;
+      dp.min = todayKey();
+      dp.addEventListener('change', function(){
+        var v = dp.value;
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+        var ui2 = loadUi();
+        ui2.date = v;
+        saveUi(ui2);
+        render().catch(console.error);
+      });
+    }
+
     window.__setDir = function(d){
       var ui2 = loadUi();
       ui2.dir = (d==='back') ? 'back' : 'out';
@@ -1252,17 +1352,17 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     };
 
     window.__openBooking = function(d, t){
-      setHash('/book?dir=' + encodeURIComponent(d) + '&time=' + encodeURIComponent(t));
+      setHash('/book?date=' + encodeURIComponent(date) + '&dir=' + encodeURIComponent(d) + '&time=' + encodeURIComponent(t));
     };
 
-    window.__exportDay = function(){ doExport('day', todayKey()).catch(console.error); };
-    window.__exportMonth = function(){ doExport('month', currentMonthKey()).catch(console.error); };
+    window.__exportDay = function(){ doExport('day', date).catch(console.error); };
+    window.__exportMonth = function(){ doExport('month', monthKeyFromDateStr(date)).catch(console.error); };
     window.__exportAll = function(){ doExport('all','').catch(console.error); };
 
     window.__resetSeats = function(){
       if(!confirm('ต้องการรีเซ็ตที่นั่งของวันนี้ (ไม่ลบ Log) ใช่ไหม?')) return;
-      storage.resetDay(todayKey()).then(function(ok){
-        if(ok) toast('รีเซ็ตที่นั่งแล้ว', 'วันที่ ' + todayKey());
+      storage.resetDay(date).then(function(ok){
+        if(ok) toast('รีเซ็ตที่นั่งแล้ว', 'วันที่ ' + date);
         else toast('รีเซ็ตไม่สำเร็จ', 'ตรวจสอบ Firebase/Quota');
         render().catch(console.error);
       });
@@ -1270,12 +1370,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   }
 
 
-  async function viewBooking(dirKey, baseTime) {
+  async function viewBooking(dateStr, dirKey, baseTime) {
     renderNav('/');
     setStatusLine();
-    var date = todayKey();
+    var ui = loadUi();
+    var date = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : (ui.date || todayKey());
     var dir = (dirKey==='back') ? DIRS.back : DIRS.out;
-    var closed = isClosedToday(baseTime);
+    var closed = isSlotPast(date, baseTime);
 
     var slot = await storage.getSlot(date, dir.key, baseTime);
 
@@ -1286,7 +1387,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     $('view').innerHTML =
       '<section class="card">' +
         '<div class="card-h">' +
-          '<div><h2>' + escapeHtml(dir.label) + ' • รอบเวลา <span style="color:var(--gold-2)">' + escapeHtml(baseTime) + '</span></h2>' +
+          '<div><h2>' + escapeHtml(dir.label) + ' • วันที่ <span style="color:var(--gold2)">' + escapeHtml(date) + '</span> • รอบเวลา <span style="color:var(--gold2)">' + escapeHtml(baseTime) + '</span></h2>' +
           '<p class="hint">เลือก ' + escapeHtml(dir.selectLabel) + ' ก่อน แล้วระบบจะแสดงเวลาถึง</p></div>' +
           '<div class="row"><button class="btn ghost" onclick="window.__back()">ย้อนกลับ</button></div>' +
         '</div>' +
@@ -1390,7 +1491,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
 
     function updateMini(slotData) {
       var sl = slotData;
-      var closedNow = isClosedToday(baseTime);
+      var closedNow = isSlotPast(date, baseTime);
       $('mini').innerHTML = '<b>คงเหลือ:</b> ที่นั่งว่าง <b class="' + (sl.available===0?'danger':'') + '">' + sl.available + '</b> / ' + sl.capacity + (closedNow ? ' • <span style="color: rgba(245,240,230,.55)"><b>ปิดทำรายการแล้ว</b></span>' : '') + '<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>';
     }
 
@@ -1458,7 +1559,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   async function viewLogs() {
     renderNav('/logs');
     setStatusLine();
-    var monthKey = currentMonthKey();
+    var monthKey = monthKeyFromDateStr(date);
     var stats = await storage.getStatsMonth(monthKey);
 
     function val(dirKey, t) {
@@ -1551,15 +1652,15 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
 
     var dayEl = $('expDay');
     var monthEl = $('expMonth');
-    if(dayEl) dayEl.value = todayKey();
-    if(monthEl) monthEl.value = currentMonthKey();
+    if(dayEl) dayEl.value = (loadUi().date || todayKey());
+    if(monthEl) monthEl.value = monthKeyFromDateStr(loadUi().date || todayKey());
 
     window.__exportDayFromInput = function(){
-      var v = (dayEl && dayEl.value) ? dayEl.value : todayKey();
+      var v = (dayEl && dayEl.value) ? dayEl.value : (loadUi().date || todayKey());
       doExport('day', v).catch(console.error);
     };
     window.__exportMonthFromInput = function(){
-      var v = (monthEl && monthEl.value) ? monthEl.value : currentMonthKey();
+      var v = (monthEl && monthEl.value) ? monthEl.value : monthKeyFromDateStr(loadUi().date || todayKey());
       doExport('month', v).catch(console.error);
     };
     window.__exportAll = function(){ doExport('all','').catch(console.error); };
@@ -1574,9 +1675,17 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var h = parseHash();
     if(h.path === '/logs') return viewLogs();
     if(h.path === '/book') {
+      var d = h.params.get('date') || (loadUi().date || todayKey());
+      if(d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        var ui2 = loadUi();
+        ui2.date = d;
+        saveUi(ui2);
+      } else {
+        d = loadUi().date || todayKey();
+      }
       var dir = h.params.get('dir') || 'out';
       var t = h.params.get('time') || '';
-      return viewBooking(dir==='back'?'back':'out', t);
+      return viewBooking(d, dir==='back'?'back':'out', t);
     }
     return viewSchedule();
   }
