@@ -390,12 +390,34 @@
   function setHash(path) { location.hash = '#'+path; }
 
   function downloadBlob(filename, mime, content) {
-    var blob = new Blob([content], { type: mime });
+    // Robust download for Chrome/Edge/Firefox + fallback for iOS/Safari
+    var blob = (content instanceof Blob) ? content : new Blob([content], { type: mime });
+    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      window.navigator.msSaveOrOpenBlob(blob, filename);
+      return;
+    }
+    var url = URL.createObjectURL(blob);
+
+    var ua = (navigator && navigator.userAgent) ? navigator.userAgent : '';
+    var isIOS = /iP(ad|hone|od)/.test(ua);
+    var isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+
+    // iOS Safari download attribute is unreliable — open in a new tab
+    if (isIOS || isSafari) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+      toast('เปิดไฟล์แล้ว', 'ถ้าไม่ดาวน์โหลดอัตโนมัติ ให้กด Share/Save บนหน้าที่เปิดขึ้นมา');
+      return;
+    }
+
     var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
   }
 
   function safeKey(s) {
@@ -977,17 +999,30 @@
   }
 
   async function doExport(mode, value) {
+    // ✅ Export reliability: smaller limits + clear feedback
+    var limitN = (mode === 'day') ? 5000 : (mode === 'month' ? 20000 : 20000);
+    toast('กำลังเตรียมไฟล์', 'โปรดรอสักครู่…');
+
     var logs;
-    if(mode === 'day') logs = await storage.queryLogs({ mode:'day', value:value, limit: 1000000 });
-    else if(mode === 'month') logs = await storage.queryLogs({ mode:'month', value:value, limit: 1000000 });
-    else logs = await storage.queryLogs({ mode:'all', limit: 1000000 });
+    if(mode === 'day') logs = await storage.queryLogs({ mode:'day', value:value, limit: limitN });
+    else if(mode === 'month') logs = await storage.queryLogs({ mode:'month', value:value, limit: limitN });
+    else logs = await storage.queryLogs({ mode:'all', limit: limitN });
+
+    if(!logs || logs.length === 0) {
+      toast('ไม่มีข้อมูล', 'ไม่พบ Log ในช่วงที่เลือก');
+      return;
+    }
 
     var html = buildExcelHtml(logs);
     var suffix = (mode === 'day') ? value : (mode === 'month' ? value : ('all-' + todayKey()));
     downloadBlob('laya-shuttle-logs-' + suffix + '.xls', 'application/vnd.ms-excel;charset=utf-8', '\ufeff' + html);
-  }
 
-  // ============================
+    if(logs.length >= limitN) {
+      toast('Export เสร็จแล้ว', 'หมายเหตุ: ส่งออกสูงสุด ' + limitN + ' รายการ (ถ้าข้อมูลเยอะ แนะนำ Export รายวัน/รายเดือน)');
+    } else {
+      toast('เริ่มดาวน์โหลดไฟล์', 'ถ้าไม่ดาวน์โหลดอัตโนมัติ ให้ดูแท็บใหม่/หน้าดาวน์โหลดของเบราว์เซอร์');
+    }
+  }// ============================
   // Views
   // ============================
   function setStatusLine() {
@@ -1047,16 +1082,17 @@
     var cardsHtml = slots.map(function(s){
       var closed = isClosedToday(s.time);
       var isFull = (s.available === 0);
-      var btnLabel = closed ? 'ปิดแล้ว' : 'เลือก';
+      // ✅ Past time: show grey style only (still clickable)
+      var btnLabel = 'เลือก';
       var btnKind = closed ? 'closed' : 'pick';
       var availClass = isFull ? 'danger' : '';
       return '<div class="slot">' +
         '<div class="meta">' +
           '<div class="time">' + escapeHtml(s.time) + '</div>' +
           '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + '</div>' +
-          (closed ? '<div class="danger-text">• ปิดทำรายการ</div>' : '') +
+          (closed ? '<div style="color: rgba(245,240,230,.55)">• ปิดทำรายการ</div>' : '') +
         '</div>' +
-        '<button class="btn ' + btnKind + '" ' + ((closed || isFull) ? 'disabled' : '') + ' onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
+        '<button class="btn ' + btnKind + '" ' + (isFull ? 'disabled' : '') + ' onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
       '</div>';
     }).join('');
 
@@ -1103,7 +1139,7 @@
             '</div>' +
           '</div>' +
           '<div class="card-b"><div class="slots">' + cardsHtml + '</div>' +
-            '<div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วจอง/ยกเลิกไม่ได้</div>' +
+            '<div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วแสดงเป็นสีเทา (ยังจอง/ยกเลิกได้)</div>' +
           '</div>' +
         '</section>' +
         right +
@@ -1256,18 +1292,12 @@
     function updateMini(slotData) {
       var sl = slotData;
       var closedNow = isClosedToday(baseTime);
-      $('mini').innerHTML = '<b>คงเหลือ:</b> ที่นั่งว่าง <b class="' + (sl.available===0?'danger':'') + '">' + sl.available + '</b> / ' + sl.capacity + (closedNow ? ' • <span class="danger-text"><b>ปิดทำรายการแล้ว</b></span>' : '') + '<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>';
-      if(closedNow) {
-        bookBtn.disabled = true;
-        placeEl.disabled = true;
-        roomEl.disabled = true;
-        paxEl.disabled = true;
-      }
+      $('mini').innerHTML = '<b>คงเหลือ:</b> ที่นั่งว่าง <b class="' + (sl.available===0?'danger':'') + '">' + sl.available + '</b> / ' + sl.capacity + (closedNow ? ' • <span style="color: rgba(245,240,230,.55)"><b>ปิดทำรายการแล้ว</b></span>' : '') + '<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>';
     }
 
     function updateBookBtn(slotData) {
       var room = String(roomEl.value||'').trim();
-      if(!room) { if(!isClosedToday(baseTime)) bookBtn.disabled = false; noteEl.textContent=''; return; }
+      if(!room) { bookBtn.disabled = false; noteEl.textContent=''; return; }
       var roomK = safeKey(room);
       var ex = slotData.bookings && slotData.bookings[roomK];
       var booked = ex ? (ex.pax||0) : 0;
@@ -1276,7 +1306,7 @@
         var placeText = (ex.pickup && ex.destination) ? (ex.pickup + ' → ' + ex.destination) : '';
         noteEl.innerHTML = 'ห้อง <b>' + escapeHtml(room) + '</b> จองแล้ว <b>' + booked + '</b> คนในรอบนี้' + (placeText ? (' (' + escapeHtml(placeText) + ')') : '') + ' — กันการกดซ้ำ';
       } else {
-        if(!isClosedToday(baseTime)) bookBtn.disabled = false;
+        bookBtn.disabled = false;
         noteEl.textContent = '';
       }
     }
@@ -1296,7 +1326,6 @@
     window.__back = function(){ setHash('/'); };
 
     window.__book = async function(){
-      if(closed) { toast('ปิดทำรายการแล้ว','รอบนี้ไม่สามารถจองได้'); return; }
       var placeKey = String(placeEl.value||'').trim();
       var room = String(roomEl.value||'').trim();
       var pax = parseInt(paxEl.value,10);
@@ -1314,7 +1343,6 @@
     };
 
     window.__cancel = async function(){
-      if(closed) { toast('ปิดทำรายการแล้ว','รอบนี้ไม่สามารถยกเลิกได้'); return; }
       var room = String(roomEl.value||'').trim();
       var pax = parseInt(paxEl.value,10);
       if(!room) { toast('ข้อมูลไม่ครบ','กรุณาใส่เลขห้อง'); return; }
