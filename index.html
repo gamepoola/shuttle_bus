@@ -6,21 +6,15 @@
   <title>Laya shuttle bus</title>
   <style>
     :root{
+      --bg1:#07121f; --bg2:#0b1a2a;
+      --text:#f5f0e6; --muted:#cbbfae;
       --gold:#836A45;
-      --gold-2:#B0A390;
-      --gold-glow: rgba(131,106,69,.26);
-
-      --bg1:#0c0906;
-      --bg2:#15100a;
-
-      --text:#f6efe6;
-      --muted:#d2c3b2;
+      --gold2:#B0A390;
       --line: rgba(131,106,69,.22);
-
+      --shadow: 0 12px 34px rgba(0,0,0,.40);
+      --ok:#22c55e;
       --danger:#ff5a5f;
-      --ok:#40c463;
-
-      --shadow: 0 14px 36px rgba(0,0,0,.45);
+      --yellow:#f2c94c;
     }
 
     *{ box-sizing:border-box; }
@@ -30,8 +24,8 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       color:var(--text);
       background:
-        radial-gradient(1100px 760px at 18% 0%, var(--gold-glow), transparent 60%),
-        radial-gradient(900px 700px at 92% 18%, rgba(176,163,144,.14), transparent 55%),
+        radial-gradient(1200px 800px at 20% 0%, rgba(131,106,69,.14), transparent 60%),
+        radial-gradient(900px 700px at 90% 20%, rgba(176,163,144,.10), transparent 55%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
       min-height:100vh;
     }
@@ -41,34 +35,50 @@
     header{
       position: sticky; top: 0;
       backdrop-filter: blur(10px);
-      background: rgba(12,9,6,.62);
+      background: rgba(7,18,31,.65);
       border-bottom: 1px solid var(--line);
       z-index: 10;
     }
 
     .brand{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 14px 18px; }
-    .brand-left{ display:flex; align-items:center; gap:14px; min-width:0; }
-    .logo{ height: 44px; width:auto; display:block; filter: drop-shadow(0 10px 18px rgba(0,0,0,.35)); }
+    .brand-left{ display:flex; align-items:center; gap:12px; min-width:0; }
+
+    .mark{
+      width: 46px; height: 46px; border-radius: 16px;
+      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.14), transparent 55%),
+                  linear-gradient(135deg, rgba(131,106,69,.38), rgba(131,106,69,.08));
+      border: 1px solid rgba(131,106,69,.35);
+      box-shadow: var(--shadow);
+      display:grid; place-items:center;
+      font-weight: 900;
+      color: var(--gold2);
+      letter-spacing: .5px;
+      font-size: 18px;
+      flex: 0 0 auto;
+    }
+
     h1{ margin:0; font-size: 20px; letter-spacing: .6px; }
-    .sub{ margin:2px 0 0 0; color: var(--muted); font-size: 13.5px; }
+    .sub{ margin:2px 0 0 0; color: var(--muted); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70vw; }
 
     .nav{ display:flex; gap: 10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
     .chip{
       padding: 9px 12px;
       border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(18,13,8,.55);
+      border: 1px solid rgba(131,106,69,.22);
+      background: rgba(15,36,56,.35);
       color: var(--text);
       font-size: 14px;
       font-weight: 650;
       cursor:pointer;
       user-select:none;
+      text-decoration:none;
+      display:inline-block;
     }
-    .chip.active{ border-color: rgba(131,106,69,.55); background: rgba(131,106,69,.14); color: var(--gold-2); }
+    .chip.active{ border-color: rgba(131,106,69,.55); background: rgba(131,106,69,.14); color: var(--gold2); }
 
     .card{
-      background: linear-gradient(180deg, rgba(18,13,8,.82), rgba(14,10,6,.74));
-      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(15,36,56,.78), rgba(12,29,47,.72));
+      border: 1px solid rgba(131,106,69,.18);
       border-radius: 20px;
       box-shadow: var(--shadow);
       overflow:hidden;
@@ -77,15 +87,16 @@
       padding: 16px 16px 12px 16px;
       border-bottom: 1px solid rgba(131,106,69,.16);
       display:flex; align-items:flex-end; justify-content:space-between; gap: 12px;
+      flex-wrap:wrap;
     }
     .card-h h2{ margin:0; font-size: 17px; letter-spacing:.4px; }
     .card-h .hint{ margin:4px 0 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
     .card-b{ padding: 14px 16px 16px 16px; }
 
     .grid{ display:grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 940px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
+    @media (min-width: 980px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
 
-    .slots{ display:grid; grid-template-columns: 1fr; gap: 10px; }
+    .slots{ display:grid; grid-template-columns: 1fr; gap: 12px; }
     @media (min-width: 640px){ .slots{ grid-template-columns: 1fr 1fr; } }
 
     .slot{
@@ -93,19 +104,19 @@
       padding: 14px;
       border-radius: 18px;
       border: 1px solid rgba(131,106,69,.18);
-      background: rgba(12,9,6,.35);
+      background: rgba(7,18,31,.35);
     }
-    .slot .meta{ display:flex; flex-direction:column; gap: 6px; min-width: 0; }
+    .slot .meta{ display:flex; flex-direction:column; gap: 6px; min-width:0; }
     .slot .time{ font-size: 22px; font-weight: 900; letter-spacing:.3px; }
     .slot .seat{ font-size: 15.5px; color: var(--muted); }
-    .slot .seat b{ font-size: 20px; color: var(--gold-2); }
-    .slot .route{ font-size: 12.8px; color: rgba(210,195,178,.92); line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 560px; }
+    .slot .seat b{ font-size: 20px; color: var(--ok); }
+    .slot .seat b.danger{ color: var(--danger); }
 
     .btn{
       appearance:none;
       border: 1px solid rgba(131,106,69,.35);
-      background: rgba(131,106,69,.12);
-      color: var(--gold-2);
+      background: rgba(15,36,56,.35);
+      color: var(--text);
       padding: 11px 14px;
       border-radius: 16px;
       font-weight: 850;
@@ -117,22 +128,34 @@
       text-align:center;
       font-size: 15px;
     }
-    .btn:hover{ border-color: rgba(131,106,69,.6); background: rgba(131,106,69,.18); }
+    .btn:hover{ border-color: rgba(131,106,69,.60); background: rgba(15,36,56,.45); }
     .btn:active{ transform: translateY(1px); }
     .btn:disabled{ opacity: .55; cursor:not-allowed; transform:none; }
-    .btn.primary{
-      background: linear-gradient(135deg, rgba(131,106,69,.22), rgba(131,106,69,.10));
-      border-color: rgba(131,106,69,.55);
-      color: var(--text);
+
+    /* ปุ่มปิดแล้ว (สีเดิม/เข้ม) */
+    .btn.closed{
+      background: rgba(15,36,56,.30);
+      border-color: rgba(131,106,69,.18);
+      color: rgba(245,240,230,.65);
     }
-    .btn.ghost{
-      background: rgba(18,13,8,.50);
-      border-color: rgba(131,106,69,.22);
-      color: var(--text);
+
+    /* ปุ่มเลือก (สีเหลือง) */
+    .btn.pick{
+      background: linear-gradient(135deg, rgba(242,201,76,.95), rgba(242,201,76,.65));
+      border-color: rgba(242,201,76,.85);
+      color: #0b1a2a;
     }
+    .btn.pick:hover{
+      background: linear-gradient(135deg, rgba(242,201,76,1), rgba(242,201,76,.72));
+      border-color: rgba(242,201,76,1);
+    }
+
+    .btn.primary{ background: linear-gradient(135deg, rgba(131,106,69,.22), rgba(131,106,69,.12)); border-color: rgba(131,106,69,.55); color: var(--text); }
+    .btn.ghost{ background: rgba(15,36,56,.25); border-color: rgba(131,106,69,.22); color: var(--text); }
     .btn.danger{ background: rgba(255,90,95,.10); border-color: rgba(255,90,95,.45); color: #ffb0b3; }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-start; }
+
     .field{ display:flex; flex-direction:column; gap:6px; width: 100%; }
     label{ color: var(--muted); font-size: 13.5px; font-weight: 650; }
     input, select{
@@ -140,24 +163,38 @@
       padding: 13px 12px;
       border-radius: 16px;
       border: 1px solid rgba(131,106,69,.18);
-      background: rgba(12,9,6,.35);
+      background: rgba(7,18,31,.35);
       color: var(--text);
       outline:none;
-      font-size: 16.5px;
+      font-size: 17px;
       font-weight: 650;
     }
     select{ cursor:pointer; }
-    input:focus, select:focus{ border-color: rgba(131,106,69,.55); box-shadow: 0 0 0 4px rgba(131,106,69,.14); }
+    input:focus, select:focus{ border-color: rgba(131,106,69,.55); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
 
     .kpi{
       display:flex; flex-direction:column; gap: 8px;
       padding: 12px;
       border-radius: 18px;
       border: 1px solid rgba(131,106,69,.18);
-      background: rgba(12,9,6,.35);
+      background: rgba(7,18,31,.35);
     }
-    .kpi .big{ font-size: 30px; font-weight: 950; letter-spacing:.2px; color: var(--gold-2); }
+    .kpi .big{ font-size: 30px; font-weight: 950; letter-spacing:.2px; color: var(--gold2); }
     .kpi .small{ color: var(--muted); font-size: 13.5px; line-height: 1.55; }
+
+    .divider{ height:1px; background: rgba(131,106,69,.16); margin: 12px 0; }
+
+    .barwrap{ display:grid; gap: 8px; }
+    .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(7,18,31,.25); }
+    .bar .lbl{ width: 66px; color: var(--muted); font-size: 13.5px; font-weight: 700; }
+    .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.10); overflow:hidden; }
+    .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.60), rgba(176,163,144,.22)); }
+    .bar .num{ width: 62px; text-align:right; color: var(--gold2); font-weight: 900; font-size: 13.5px; }
+
+    .footer-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
+
+    .pill{ display:inline-flex; align-items:center; gap: 8px; padding: 8px 11px; border-radius: 999px; background: rgba(131,106,69,.10); border: 1px solid rgba(131,106,69,.20); color: var(--muted); font-size: 13.5px; font-weight: 650; }
+    .dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
 
     .mini{
       margin-top: 10px;
@@ -168,18 +205,31 @@
       line-height: 1.65;
     }
 
+    .note{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(131,106,69,.18);
+      background: rgba(7,18,31,.25);
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    .danger-text{ color: #ffb0b3; }
+
     .toast{
       position: fixed;
       left: 50%;
       bottom: 18px;
       transform: translateX(-50%);
-      background: rgba(12,9,6,.92);
+      background: rgba(7,18,31,.88);
       border: 1px solid rgba(131,106,69,.25);
       box-shadow: var(--shadow);
       padding: 12px 14px;
       border-radius: 18px;
       max-width: 92vw;
-      width: 640px;
+      width: 620px;
       display:none;
       z-index: 30;
     }
@@ -188,48 +238,20 @@
     .toast .t{ font-weight: 900; color: var(--text); font-size: 15.5px; }
     .toast .d{ color: var(--muted); font-size: 13.5px; margin-top: 4px; line-height: 1.5; }
 
-    table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 18px; border: 1px solid rgba(131,106,69,.18); background: rgba(12,9,6,.25); }
+    table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 18px; border: 1px solid rgba(131,106,69,.18); background: rgba(7,18,31,.25); }
     th, td{ padding: 11px 11px; font-size: 13px; border-bottom: 1px solid rgba(131,106,69,.14); text-align:left; }
     th{ color: var(--muted); font-weight: 800; }
     tr:last-child td{ border-bottom:none; }
-
-    .barwrap{ display:grid; gap: 8px; }
-    .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(12,9,6,.25); }
-    .bar .lbl{ width: 110px; color: var(--muted); font-size: 13.5px; font-weight: 700; }
-    .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.12); overflow:hidden; }
-    .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.70), rgba(176,163,144,.35)); }
-    .bar .num{ width: 62px; text-align:right; color: var(--gold-2); font-weight: 900; font-size: 13.5px; }
-
-    .footer-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
-
-    .pill{ display:inline-flex; align-items:center; gap: 8px; padding: 8px 11px; border-radius: 999px; background: rgba(131,106,69,.10); border: 1px solid rgba(131,106,69,.20); color: var(--muted); font-size: 13.5px; font-weight: 650; }
-    .dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
-
-    .danger-text{ color: #ffb0b3; }
-    .ok-text{ color: #a8f0b8; }
-
-    .divider{ height:1px; background: rgba(131,106,69,.16); margin: 12px 0; }
-
-    .note{
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(131,106,69,.18);
-      background: rgba(12,9,6,.25);
-      color: var(--muted);
-      font-size: 13.5px;
-      line-height: 1.6;
-    }
   </style>
 </head>
 <body>
   <header>
     <div class="wrap brand">
       <div class="brand-left">
-        <img class="logo" alt="Laya Resort Phuket" src="data:image/png;base64,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" />
+        <div class="mark">L</div>
         <div style="min-width:0">
           <h1>Laya shuttle bus</h1>
-          <p class="sub">เลือก ขาไป/ขากลับ → เลือกรอบเวลา → เลือกจุดหมาย/จุดรับ → ระบบบอกเวลาถึง</p>
+          <p class="sub" id="statusLine">Loading…</p>
         </div>
       </div>
       <nav class="nav" id="nav"></nav>
@@ -467,8 +489,10 @@
   var storage = (function(){
     var mode = 'local';
     var fb = null; // { db, auth, fs }
+    var initError = null;
 
     function getMode() { return mode; }
+    function getInitError() { return initError; }
 
     async function initFirebase() {
       try {
@@ -485,10 +509,12 @@
 
         fb = { db: db, auth: auth, fs: modFs };
         mode = 'firebase';
+        initError = null;
         return true;
       } catch(e) {
         mode = 'local';
         fb = null;
+        initError = e;
         console.warn('Firebase init failed, fallback to local:', e);
         toast('Firebase ใช้งานไม่ได้', 'สลับเป็นโหมด Local ชั่วคราว');
         return false;
@@ -614,7 +640,12 @@
           tx.set(slotRef, upd, { merge: true });
 
           var statField = dirKey + '.' + timeKey(timeStr);
-          var statUpd = {}; statUpd[statField] = fs.increment(pax); statUpd.updatedAt = fs.serverTimestamp();
+          var statUpd = {};
+          statUpd[statField] = fs.increment(pax);
+          statUpd['meta.logs'] = fs.increment(1);
+          statUpd['meta.bookEntries'] = fs.increment(1);
+          statUpd['meta.bookPax'] = fs.increment(pax);
+          statUpd.updatedAt = fs.serverTimestamp();
           tx.set(statsRef, statUpd, { merge: true });
 
           tx.set(logRef, {
@@ -669,6 +700,7 @@
         var slotId = slotDocId(dateStr, dirKey, timeStr);
         var slotRef = fs.doc(db, COL_SLOTS, slotId);
         var monthKey = monthKeyFromDateStr(dateStr);
+        var statsRef = fs.doc(db, COL_STATS, monthKey);
         var logRef = fs.doc(fs.collection(db, COL_LOGS));
 
         await fs.runTransaction(db, async function(tx){
@@ -690,6 +722,9 @@
           if(left === 0) upd['bookings.'+roomK] = fs.deleteField();
           else upd['bookings.'+roomK+'.pax'] = left;
           tx.set(slotRef, upd, { merge:true });
+
+          var statUpd2 = {}; statUpd2['meta.logs'] = fs.increment(1); statUpd2['meta.cancelEntries'] = fs.increment(1); statUpd2.updatedAt = fs.serverTimestamp();
+          tx.set(statsRef, statUpd2, { merge:true });
 
           tx.set(logRef, {
             action: 'CANCEL',
@@ -715,19 +750,27 @@
         return { ok:false, msg: (e && e.message) ? e.message : 'ยกเลิกไม่สำเร็จ' };
       }
     }
-
     async function getStatsMonth(monthKey) {
       if(mode !== 'firebase') {
-        var logs = loadLocalLogs();
-        var out = { out: {}, back: {} };
+        var logsAll = loadLocalLogs();
+        var logsMonth = logsAll.filter(function(e){ return e && monthKeyFromDateStr(e.date) === monthKey; });
+
+        var out = { out: {}, back: {}, meta: {
+          monthLogs: logsMonth.length,
+          totalLogs: logsAll.length,
+          monthBookEntries: logsMonth.filter(function(e){ return e && e.action === 'BOOK'; }).length,
+          monthCancelEntries: logsMonth.filter(function(e){ return e && e.action === 'CANCEL'; }).length
+        } };
+
         Object.keys(DIRS).forEach(function(dk){
           DIRS[dk].baseTimes.forEach(function(t){ out[dk][timeKey(t)] = 0; });
         });
-        logs.forEach(function(e){
+
+        logsMonth.forEach(function(e){
           if(!e || e.action !== 'BOOK') return;
-          if(monthKeyFromDateStr(e.date) !== monthKey) return;
           if(out[e.dir] && out[e.dir][timeKey(e.time)] !== undefined) out[e.dir][timeKey(e.time)] += (e.pax||0);
         });
+
         return out;
       }
 
@@ -735,15 +778,16 @@
         var fs = fb.fs;
         var ref = fs.doc(fb.db, COL_STATS, monthKey);
         var snap = await fs.getDoc(ref);
-        if(!snap.exists()) return { out:{}, back:{} };
+        if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         var data = snap.data() || {};
-        return { out: data.out || {}, back: data.back || {} };
+        return { out: data.out || {}, back: data.back || {}, meta: data.meta || {} };
       } catch(e) {
         console.error(e);
         if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return getStatsMonth(monthKey); }
-        return { out:{}, back:{} };
+        return { out:{}, back:{}, meta:{} };
       }
     }
+
 
     function rangeMsForDay(dateStr) {
       var parts = String(dateStr).split('-');
@@ -827,6 +871,7 @@
     return {
       initFirebase: initFirebase,
       getMode: getMode,
+      getInitError: getInitError,
       getSlot: getSlot,
       listSlots: listSlots,
       book: book,
@@ -926,41 +971,105 @@
   // ============================
   // Views
   // ============================
+  function setStatusLine() {
+    var el = document.getElementById('statusLine');
+    if(!el) return;
+    var mode = storage.getMode();
+    var err = (storage.getInitError ? storage.getInitError() : null);
+
+    if(err && mode !== 'firebase') {
+      el.textContent = 'Firebase state error (ใช้ Local แทน)';
+      return;
+    }
+    if(mode === 'firebase') {
+      el.textContent = 'Realtime: ข้อมูลที่นั่ง + Log อยู่บน Firebase (Export เป็น Excel ได้)';
+      return;
+    }
+    el.textContent = 'Local: ข้อมูลที่นั่ง + Log อยู่ในเครื่องนี้ (Export เป็น Excel ได้)';
+  }
   async function viewSchedule() {
     renderNav('/');
+    setStatusLine();
+
     var ui = loadUi();
     var date = todayKey();
     var dirKey = ui.dir;
-
     var mode = storage.getMode();
+    var monthKey = currentMonthKey();
 
     var slots = await storage.listSlots(date, dirKey);
 
+    // Stats (monthly, based on BOOK total pax)
+    var statsMonth = await storage.getStatsMonth(monthKey);
+    var meta = (statsMonth && statsMonth.meta) ? statsMonth.meta : {};
+    var perObj = (statsMonth && statsMonth[dirKey]) ? statsMonth[dirKey] : {};
+
+    var baseTimes = DIRS[dirKey].baseTimes.slice();
+    var topTime = '—';
+    var topValue = 0;
+    var vals = [];
+    baseTimes.forEach(function(t){
+      var v = Number(perObj[timeKey(t)] || 0);
+      vals.push(v);
+      if(v > topValue) { topValue = v; topTime = t; }
+    });
+    var maxVal = Math.max.apply(null, vals.concat([0]));
+
+    var barsHtml = baseTimes.map(function(t){
+      var v = Number(perObj[timeKey(t)] || 0);
+      var w = maxVal ? Math.round((v/maxVal)*100) : 0;
+      return '<div class="bar">' +
+        '<div class="lbl">' + escapeHtml(t) + '</div>' +
+        '<div class="track"><div class="fill" style="width:' + w + '%"></div></div>' +
+        '<div class="num">' + v + '</div>' +
+      '</div>';
+    }).join('');
+
     var cardsHtml = slots.map(function(s){
       var closed = isClosedToday(s.time);
+      var isFull = (s.available === 0);
       var btnLabel = closed ? 'ปิดแล้ว' : 'เลือก';
-      var btnKind = closed ? 'primary' : 'pick';
-      var availClass = (s.available===0) ? 'danger' : '';
-      return '\n<div class="slot">' +
+      var btnKind = closed ? 'closed' : 'pick';
+      var availClass = isFull ? 'danger' : '';
+      return '<div class="slot">' +
         '<div class="meta">' +
           '<div class="time">' + escapeHtml(s.time) + '</div>' +
-          '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + (closed ? ' • <span class="danger-text">ปิดทำรายการ</span>' : '') + '</div>' +
+          '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + '</div>' +
+          (closed ? '<div class="danger-text">• ปิดทำรายการ</div>' : '') +
         '</div>' +
-        '<button class="btn ' + btnKind + '" ' + ((closed || s.available===0) ? 'disabled' : '') + ' onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
+        '<button class="btn ' + btnKind + '" ' + ((closed || isFull) ? 'disabled' : '') + ' onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
       '</div>';
-    }).join('\n');
+    }).join('');
+
+    var dirLabel = (dirKey === 'back') ? 'ขากลับ' : 'ขาไป';
+    var monthLogsText = (meta.monthLogs===undefined || meta.monthLogs===null) ? '—' : String(meta.monthLogs);
+    var totalLogsText = (meta.totalLogs===undefined || meta.totalLogs===null) ? '—' : String(meta.totalLogs);
 
     var right = '';
     right += '<section class="card">';
-    right += '<div class="card-h"><div><h2>Export Log</h2><p class="hint">Storage: <b>' + (mode==='firebase' ? 'Firebase' : 'Local') + '</b> • Export แยกวัน/เดือน/ทั้งหมดได้</p></div></div>';
+    right += '<div class="card-h">' +
+      '<div><h2>สถิติจาก Log</h2>' +
+      '<p class="hint">โหมด: <b>' + dirLabel + '</b> • เดือน <b>' + monthKey + '</b> (ยอด BOOK รวม)</p></div>' +
+    '</div>';
     right += '<div class="card-b">';
+    right += '<div class="kpi">' +
+      '<div class="big">' + escapeHtml(topTime) + '</div>' +
+      '<div class="small">ยอดจองรวมสูงสุด • <b>' + topValue + '</b> คน</div>' +
+      '<div class="divider"></div>' +
+      '<div class="small">Log เดือนนี้โหลด: <b>' + escapeHtml(monthLogsText) + '</b> รายการ • Log ทั้งหมด: <b>' + escapeHtml(totalLogsText) + '</b></div>' +
+    '</div>';
+    right += '<div style="height:12px"></div>';
+    right += '<div class="barwrap">' + barsHtml + '</div>';
+    right += '<div class="divider"></div>';
     right += '<div class="footer-actions">' +
       '<button class="btn ghost" onclick="window.__exportDay()">Export วันนี้</button>' +
       '<button class="btn ghost" onclick="window.__exportMonth()">Export เดือนนี้</button>' +
       '<button class="btn ghost" onclick="window.__exportAll()">Export ทั้งหมด</button>' +
+    '</div>';
+    right += '<div style="height:10px"></div>';
+    right += '<div class="footer-actions">' +
       '<button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันนี้)</button>' +
     '</div>';
-    right += '<div class="mini">Tip: ถ้า Firebase โควต้าเต็ม ระบบจะสลับเป็น Local ชั่วคราว เพื่อให้ใช้งานต่อได้</div>';
     right += '</div></section>';
 
     $('view').innerHTML =
@@ -974,7 +1083,9 @@
               '<button class="chip ' + (dirKey==='back'?'active':'') + '" onclick="window.__setDir(\'back\')">ขากลับ</button>' +
             '</div>' +
           '</div>' +
-          '<div class="card-b"><div class="slots">' + cardsHtml + '</div></div>' +
+          '<div class="card-b"><div class="slots">' + cardsHtml + '</div>' +
+            '<div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วจอง/ยกเลิกไม่ได้</div>' +
+          '</div>' +
         '</section>' +
         right +
       '</div>';
@@ -1004,8 +1115,10 @@
     };
   }
 
+
   async function viewBooking(dirKey, baseTime) {
     renderNav('/');
+    setStatusLine();
     var date = todayKey();
     var dir = (dirKey==='back') ? DIRS.back : DIRS.out;
     var closed = isClosedToday(baseTime);
@@ -1087,17 +1200,37 @@
     }
 
     function renderBookings(slotData) {
-      var sl = slotData;
+      var sl = slotData || {};
       var b = sl.bookings || {};
-      var entries = Object.keys(b).map(function(k){ return b[k]; }).filter(Boolean);
+      // รองรับข้อมูลเก่าที่อาจไม่มี field room ใน booking object
+      var entries = Object.keys(b).map(function(k){
+        var obj = b[k];
+        if(obj && typeof obj === 'object') {
+          if(!obj.room) obj.room = k;
+          if(obj.pax === undefined && obj.pax !== 0 && obj.people !== undefined) obj.pax = obj.people;
+          return obj;
+        }
+        // กรณีบันทึกมาเป็นเลข pax อย่างเดียว
+        if(typeof obj === 'number') return { room: k, pax: obj };
+        return null;
+      }).filter(Boolean);
+
       entries.sort(function(a,c){ return String(a.room||'').localeCompare(String(c.room||'')); });
+
       var wrap = $('bookingsTable');
-      if(entries.length === 0) { wrap.innerHTML = '<div class="mini">ยังไม่มีการจองในรอบนี้</div>'; return; }
+      if(entries.length === 0) {
+        wrap.innerHTML = '<div class="mini">ยังไม่มีการจองในรอบนี้</div>';
+        return;
+      }
+
       var rows = entries.map(function(obj){
+        var room = obj.room || '';
+        var pax = (obj.pax !== undefined && obj.pax !== null) ? obj.pax : '';
         var line = (obj.pickup && obj.destination) ? (obj.pickup + ' → ' + obj.destination) : '';
         var arrive = obj.arriveTime ? ('ถึง ' + obj.arriveTime) : '';
-        return '<tr><td>' + escapeHtml(obj.room||'') + '</td><td><b>' + escapeHtml(obj.pax||'') + '</b></td><td>' + escapeHtml(line) + '</td><td>' + escapeHtml(arrive) + '</td></tr>';
+        return '<tr><td>' + escapeHtml(room) + '</td><td><b>' + escapeHtml(pax) + '</b></td><td>' + escapeHtml(line) + '</td><td>' + escapeHtml(arrive) + '</td></tr>';
       }).join('');
+
       wrap.innerHTML = '<table><thead><tr><th>เลขห้อง</th><th>จำนวนคน</th><th>เส้นทาง</th><th>เวลาถึง</th></tr></thead><tbody>' + rows + '</tbody></table>';
     }
 
@@ -1178,6 +1311,7 @@
 
   async function viewLogs() {
     renderNav('/logs');
+    setStatusLine();
     var monthKey = currentMonthKey();
     var stats = await storage.getStatsMonth(monthKey);
 
