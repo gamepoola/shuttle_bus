@@ -679,17 +679,15 @@
           var upd = { available: (available - pax), updatedAt: fs.serverTimestamp(), bookings: {} };
           upd.bookings[roomK] = bookingObj;
           tx.set(slotRef, upd, { merge: true });
-
-          var statField = dirKey + '.' + timeKey(timeStr);
-          var statUpd = {};
-          statUpd[statField] = fs.increment(pax);
-          statUpd['meta.logs'] = fs.increment(1);
-          statUpd['meta.bookEntries'] = fs.increment(1);
-          statUpd['meta.bookPax'] = fs.increment(pax);
-          statUpd.updatedAt = fs.serverTimestamp();
+          var statUpd = { updatedAt: fs.serverTimestamp(), meta: {
+            logs: fs.increment(1),
+            bookEntries: fs.increment(1),
+            bookPax: fs.increment(pax)
+          } };
+          statUpd[dirKey] = {};
+          statUpd[dirKey][timeKey(timeStr)] = fs.increment(pax);
           tx.set(statsRef, statUpd, { merge: true });
-
-          tx.set(logRef, {
+tx.set(logRef, {
             action: 'BOOK', pax: pax, room: room, time: timeStr, dir: dirKey,
             date: dateStr, month: monthKey,
             placeKey: placeKey,
@@ -747,30 +745,92 @@
         await fs.runTransaction(db, async function(tx){
           var snap = await tx.get(slotRef);
           if(!snap.exists()) throw new Error('ไม่พบรอบเวลานี้');
-          var data = snap.data();
+
+          var data = snap.data() || {};
           var capacity = (typeof data.capacity==='number') ? data.capacity : CAPACITY_PER_TRIP;
           var available = (typeof data.available==='number') ? data.available : capacity;
-          var bookings = data.bookings || {};
-          var existing = bookings[roomK];
-          var booked = existing ? (existing.pax || 0) : 0;
-          if(booked <= 0) throw new Error('ห้องนี้ยังไม่มีการจองในรอบนี้');
+
+          // ✅ Robust bookings map (supports legacy data)
+          var bookings = {};
+          if(data.bookings && typeof data.bookings === 'object' && !Array.isArray(data.bookings)) {
+            bookings = Object.assign({}, data.bookings);
+          }
+          Object.keys(data).forEach(function(k){
+            if(k.indexOf('bookings.') === 0) {
+              var rk = k.slice('bookings.'.length);
+              if(bookings[rk] === undefined && data[k] !== undefined) bookings[rk] = data[k];
+            }
+          });
+
+          // ✅ Find booking key (case-insensitive)
+          var roomNorm = String(room || '').trim();
+          var roomUpper = roomNorm.toUpperCase();
+          var candidates = [safeKey(roomUpper), safeKey(roomNorm), roomUpper, roomNorm];
+
+          var foundKey = null;
+          for(var i=0;i<candidates.length;i++){
+            var ck = candidates[i];
+            if(ck && bookings[ck] !== undefined) { foundKey = ck; break; }
+          }
+          if(!foundKey) {
+            Object.keys(bookings).some(function(k){
+              if(String(k).toUpperCase() === roomUpper) { foundKey = k; return true; }
+              var obj = bookings[k];
+              if(obj && typeof obj === 'object' && obj.room && String(obj.room).toUpperCase() === roomUpper) { foundKey = k; return true; }
+              return false;
+            });
+          }
+          if(!foundKey) throw new Error('ห้องนี้ยังไม่มีการจองในรอบนี้');
+
+          var existing = bookings[foundKey];
+          var booked = 0;
+          if(existing && typeof existing === 'object') booked = Number(existing.pax || existing.people || 0);
+          else if(typeof existing === 'number') booked = Number(existing);
+
+          if(!Number.isFinite(booked) || booked <= 0) throw new Error('ห้องนี้ยังไม่มีการจองในรอบนี้');
           if(pax > booked) throw new Error('ยกเลิกเกินจำนวนที่จองไว้');
 
           var left = booked - pax;
-          var upd = {};
-          upd.available = Math.min(capacity, available + pax);
-          upd.updatedAt = fs.serverTimestamp();
-          if(left === 0) upd['bookings.'+roomK] = fs.deleteField();
-          else upd['bookings.'+roomK+'.pax'] = left;
-          tx.update(slotRef, upd);
 
-          var statUpd2 = {}; statUpd2['meta.logs'] = fs.increment(1); statUpd2['meta.cancelEntries'] = fs.increment(1); statUpd2.updatedAt = fs.serverTimestamp();
+          // Build cleaned bookings map and overwrite the whole map in Firestore (so deletions always apply)
+          var newBookings = Object.assign({}, bookings);
+          if(left === 0) {
+            // ✅ Tombstone: prevent legacy top-level field like "bookings.A111" from reappearing on next read
+            // (We keep pax=0 so UI won't show it, and booking can be re-created later.)
+            if(existing && typeof existing === 'object') {
+              newBookings[foundKey] = Object.assign({}, existing, { pax: 0, room: existing.room || roomNorm, _tombstone: true, tsMs: Date.now() });
+            } else {
+              newBookings[foundKey] = { room: roomNorm, pax: 0, _tombstone: true, tsMs: Date.now() };
+            }
+          } else {
+            if(existing && typeof existing === 'object') {
+              newBookings[foundKey] = Object.assign({}, existing, { pax: left, room: existing.room || roomNorm });
+            } else {
+              newBookings[foundKey] = { room: roomNorm, pax: left };
+            }
+          }
+
+          // Update seats + cleaned bookings
+          tx.update(slotRef, {
+            available: Math.min(capacity, available + pax),
+            bookings: newBookings,
+            updatedAt: fs.serverTimestamp()
+          });
+
+          // Best-effort cleanup for legacy dotted-field booking (if any) so UI won't re-add it
+          if(left === 0 && fs.FieldPath) {
+            try {
+              tx.update(slotRef, new fs.FieldPath('bookings.' + foundKey), fs.deleteField());
+            } catch(_e) {}
+          }
+
+          var statUpd2 = { updatedAt: fs.serverTimestamp(), meta: { logs: fs.increment(1), cancelEntries: fs.increment(1) } };
           tx.set(statsRef, statUpd2, { merge:true });
 
           tx.set(logRef, {
             action: 'CANCEL',
             pax: pax,
-            room: room,
+            room: roomNorm,
             time: timeStr,
             dir: dirKey,
             date: dateStr,
@@ -791,6 +851,21 @@
         return { ok:false, msg: (e && e.message) ? e.message : 'ยกเลิกไม่สำเร็จ' };
       }
     }
+
+    function normalizeStatsDoc(data) {
+      data = data || {};
+      var out = (data.out && typeof data.out === 'object' && !Array.isArray(data.out)) ? data.out : {};
+      var back = (data.back && typeof data.back === 'object' && !Array.isArray(data.back)) ? data.back : {};
+      var meta = (data.meta && typeof data.meta === 'object' && !Array.isArray(data.meta)) ? data.meta : {};
+      // Support legacy dotted field names e.g. "out.t1500" or "meta.logs"
+      Object.keys(data).forEach(function(k){
+        if(k.indexOf('out.') === 0) out[k.slice(4)] = data[k];
+        else if(k.indexOf('back.') === 0) back[k.slice(5)] = data[k];
+        else if(k.indexOf('meta.') === 0) meta[k.slice(5)] = data[k];
+      });
+      return { out: out, back: back, meta: meta };
+    }
+
     async function getStatsMonth(monthKey) {
       if(mode !== 'firebase') {
         var logsAll = loadLocalLogs();
@@ -819,10 +894,11 @@
         var fs = fb.fs;
         var ref = fs.doc(fb.db, COL_STATS, monthKey);
         var snap = await fs.getDoc(ref);
-        if(!snap.exists()) return { out:{}, back:{}, meta:{} };
+        
+if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         var data = snap.data() || {};
-        return { out: data.out || {}, back: data.back || {}, meta: data.meta || {} };
-      } catch(e) {
+        return normalizeStatsDoc(data);
+} catch(e) {
         console.error(e);
         if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return getStatsMonth(monthKey); }
         return { out:{}, back:{}, meta:{} };
@@ -1001,6 +1077,14 @@
   async function doExport(mode, value) {
     // ✅ Export reliability: smaller limits + clear feedback
     var limitN = (mode === 'day') ? 5000 : (mode === 'month' ? 20000 : 20000);
+    // iOS/Safari: ต้องเปิดแท็บใหม่ก่อน (กัน popup ถูกบล็อกหลัง await)
+    var ua = (navigator && navigator.userAgent) ? navigator.userAgent : '';
+    var isIOS = /iP(ad|hone|od)/.test(ua);
+    var isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+    var preWin = null;
+    if(isIOS || isSafari) {
+      try { preWin = window.open('about:blank', '_blank', 'noopener,noreferrer'); } catch(e) { preWin = null; }
+    }
     toast('กำลังเตรียมไฟล์', 'โปรดรอสักครู่…');
 
     var logs;
@@ -1015,7 +1099,20 @@
 
     var html = buildExcelHtml(logs);
     var suffix = (mode === 'day') ? value : (mode === 'month' ? value : ('all-' + todayKey()));
-    downloadBlob('laya-shuttle-logs-' + suffix + '.xls', 'application/vnd.ms-excel;charset=utf-8', '\ufeff' + html);
+    var filename = 'laya-shuttle-logs-' + suffix + '.xls';
+    var mime = 'application/vnd.ms-excel;charset=utf-8';
+    var blob = new Blob(['\ufeff' + html], { type: mime });
+
+    if(preWin) {
+      // ใส่ไฟล์ลงแท็บที่เปิดไว้แล้ว
+      var url = URL.createObjectURL(blob);
+      try { preWin.location.href = url; } catch(e) { window.location.href = url; }
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+      toast('เปิดไฟล์แล้ว', 'ถ้าไม่ดาวน์โหลดอัตโนมัติ ให้กด Share/Save บนหน้าที่เปิดขึ้นมา');
+      return;
+    }
+
+    downloadBlob(filename, mime, blob);
 
     if(logs.length >= limitN) {
       toast('Export เสร็จแล้ว', 'หมายเหตุ: ส่งออกสูงสุด ' + limitN + ' รายการ (ถ้าข้อมูลเยอะ แนะนำ Export รายวัน/รายเดือน)');
@@ -1097,8 +1194,10 @@
     }).join('');
 
     var dirLabel = (dirKey === 'back') ? 'ขากลับ' : 'ขาไป';
-    var monthLogsText = (meta.monthLogs===undefined || meta.monthLogs===null) ? '—' : String(meta.monthLogs);
-    var totalLogsText = (meta.totalLogs===undefined || meta.totalLogs===null) ? '—' : String(meta.totalLogs);
+    var monthLogsVal = (meta.logs!==undefined && meta.logs!==null) ? meta.logs : meta.monthLogs;
+    var monthLogsText = (monthLogsVal===undefined || monthLogsVal===null) ? '—' : String(monthLogsVal);
+    var totalLogsVal = (meta.totalLogs!==undefined && meta.totalLogs!==null) ? meta.totalLogs : monthLogsVal;
+    var totalLogsText = (totalLogsVal===undefined || totalLogsVal===null) ? '—' : String(totalLogsVal);
 
     var right = '';
     right += '<section class="card">';
@@ -1268,7 +1367,7 @@
         // กรณีบันทึกมาเป็นเลข pax อย่างเดียว
         if(typeof obj === 'number') return { room: k, pax: obj };
         return null;
-      }).filter(Boolean);
+      }).filter(function(x){ if(!x) return false; var p = Number(x.pax); return Number.isFinite(p) && p > 0; });
 
       entries.sort(function(a,c){ return String(a.room||'').localeCompare(String(c.room||'')); });
 
