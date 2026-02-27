@@ -1265,8 +1265,8 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var closed = isSlotPast(date, s.time);
       var isFull = (s.available === 0);
       // ✅ Past time: show grey style only (still clickable)
-      var btnLabel = 'เลือก';
-      var btnKind = closed ? 'closed' : 'pick';
+      var btnLabel = isFull ? 'ดู' : 'เลือก';
+      var btnKind = (isFull || closed) ? 'closed' : 'pick';
       var availClass = isFull ? 'danger' : '';
       return '<div class="slot">' +
         '<div class="meta">' +
@@ -1274,7 +1274,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
           '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + '</div>' +
           (closed ? '<div style="color: rgba(245,240,230,.55)">• ปิดทำรายการ</div>' : '') +
         '</div>' +
-        '<button class="btn ' + btnKind + '" ' + (isFull ? 'disabled' : '') + ' onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
+        '<button class="btn ' + btnKind + '" onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
       '</div>';
     }).join('');
 
@@ -1496,15 +1496,35 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     }
 
     function updateBookBtn(slotData) {
+      var isFull = (slotData && typeof slotData.available === 'number' && slotData.available <= 0);
       var room = String(roomEl.value||'').trim();
-      if(!room) { bookBtn.disabled = false; noteEl.textContent=''; return; }
+
+      // ถ้ารอบนี้เต็ม: ยังเข้าไปดู/ยกเลิกได้ แต่ไม่ให้จองเพิ่ม
+      if(!room) {
+        if(isFull) {
+          bookBtn.disabled = true;
+          noteEl.textContent = 'รอบนี้ที่นั่งเต็ม (ดูรายการ/ยกเลิกได้)';
+        } else {
+          bookBtn.disabled = false;
+          noteEl.textContent = '';
+        }
+        return;
+      }
+
       var roomK = safeKey(room);
       var ex = slotData.bookings && slotData.bookings[roomK];
       var booked = ex ? (ex.pax||0) : 0;
+
       if(booked > 0) {
         bookBtn.disabled = true;
         var placeText = (ex.pickup && ex.destination) ? (ex.pickup + ' → ' + ex.destination) : '';
         noteEl.innerHTML = 'ห้อง <b>' + escapeHtml(room) + '</b> จองแล้ว <b>' + booked + '</b> คนในรอบนี้' + (placeText ? (' (' + escapeHtml(placeText) + ')') : '') + ' — กันการกดซ้ำ';
+        return;
+      }
+
+      if(isFull) {
+        bookBtn.disabled = true;
+        noteEl.textContent = 'รอบนี้ที่นั่งเต็ม (ดูรายการ/ยกเลิกได้)';
       } else {
         bookBtn.disabled = false;
         noteEl.textContent = '';
@@ -1559,6 +1579,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   async function viewLogs() {
     renderNav('/logs');
     setStatusLine();
+    var date = (loadUi().date || todayKey());
     var monthKey = monthKeyFromDateStr(date);
     var stats = await storage.getStatsMonth(monthKey);
 
