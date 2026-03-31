@@ -355,6 +355,22 @@
   function currentMonthKey() {
     return monthKeyFromDateStr(todayKey());
   }
+  function normalizeMonthValue(v) {
+    var s = String(v == null ? '' : v).trim();
+    var m = s.match(/^(\d{4}-\d{2})/);
+    return m ? m[1] : currentMonthKey();
+  }
+  function listDatesForMonth(monthStr) {
+    var mk = normalizeMonthValue(monthStr);
+    var parts = mk.split('-');
+    var y = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10) - 1;
+    if(!Number.isFinite(y) || !Number.isFinite(m)) return [];
+    var days = new Date(y, m + 1, 0).getDate();
+    var out = [];
+    for(var d = 1; d <= days; d++) out.push(parts[0] + '-' + parts[1] + '-' + pad2(d));
+    return out;
+  }
   function nowMin() {
     var d = new Date();
     return d.getHours()*60 + d.getMinutes();
@@ -970,11 +986,12 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var limitN = opts.limit || 250;
       if(limitN < 1) limitN = 250;
 
+      if(modeQ === 'month') opts.value = normalizeMonthValue(opts.value);
+
       if(mode !== 'firebase') {
         var logs = loadLocalLogs();
         if(modeQ === 'day') logs = logs.filter(function(e){ return e && e.date === opts.value; });
         if(modeQ === 'month') logs = logs.filter(function(e){ return monthKeyFromDateStr(e.date) === opts.value; });
-        // sort by shuttle time (slotTsMs) then created time (tsMs)
         logs.sort(function(a,b){
           var ax = (a && typeof a.slotTsMs === 'number') ? a.slotTsMs : (a && typeof a.tsMs === 'number' ? a.tsMs : 0);
           var bx = (b && typeof b.slotTsMs === 'number') ? b.slotTsMs : (b && typeof b.tsMs === 'number' ? b.tsMs : 0);
@@ -997,47 +1014,74 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
           pushUnique._seen[key] = true;
           arr.push(item);
         }
+        pushUnique._seen = {};
+
+        async function safeCollect(qFactory, label) {
+          try {
+            var snaps = await fs.getDocs(qFactory());
+            snaps.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+            return true;
+          } catch(e) {
+            console.warn('queryLogs skipped:', label, e);
+            return false;
+          }
+        }
 
         if(modeQ === 'day') {
           var r = rangeMsForDay(opts.value);
-          // Prefer querying by slotTsMs (shuttle datetime) so future bookings export correctly
-          var q1 = fs.query(col,
-            fs.where('slotTsMs','>=', r.start),
-            fs.where('slotTsMs','<',  r.end),
-            fs.orderBy('slotTsMs','desc'),
-            fs.limit(limitN)
-          );
-          var snaps1 = await fs.getDocs(q1);
-          snaps1.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+          await safeCollect(function(){
+            return fs.query(col,
+              fs.where('slotTsMs','>=', r.start),
+              fs.where('slotTsMs','<',  r.end),
+              fs.orderBy('slotTsMs','desc'),
+              fs.limit(limitN)
+            );
+          }, 'day-slotTsMs');
 
-          // Fallback for legacy logs that don't have slotTsMs
           if(out.length < limitN) {
-            var q2 = fs.query(col, fs.where('date','==', opts.value), fs.limit(limitN - out.length));
-            var snaps2 = await fs.getDocs(q2);
-            snaps2.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+            await safeCollect(function(){
+              return fs.query(col, fs.where('date','==', opts.value), fs.limit(limitN - out.length));
+            }, 'day-date');
           }
 
         } else if(modeQ === 'month') {
-          var rm = rangeMsForMonth(opts.value);
-          var q3 = fs.query(col,
-            fs.where('slotTsMs','>=', rm.start),
-            fs.where('slotTsMs','<',  rm.end),
-            fs.orderBy('slotTsMs','desc'),
-            fs.limit(limitN)
-          );
-          var snaps3 = await fs.getDocs(q3);
-          snaps3.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+          var monthVal = normalizeMonthValue(opts.value);
+          await safeCollect(function(){
+            return fs.query(col, fs.where('month','==', monthVal), fs.limit(limitN));
+          }, 'month-field');
 
           if(out.length < limitN) {
-            var q4 = fs.query(col, fs.where('month','==', opts.value), fs.limit(limitN - out.length));
-            var snaps4 = await fs.getDocs(q4);
-            snaps4.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+            var days = listDatesForMonth(monthVal);
+            for(var i = days.length - 1; i >= 0 && out.length < limitN; i--) {
+              await safeCollect((function(dayValue){
+                return function(){
+                  return fs.query(col, fs.where('date','==', dayValue), fs.limit(Math.max(1, Math.min(2000, limitN - out.length))));
+                };
+              })(days[i]), 'month-date-' + days[i]);
+            }
+          }
+
+          if(out.length < limitN) {
+            var rm = rangeMsForMonth(monthVal);
+            await safeCollect(function(){
+              return fs.query(col,
+                fs.where('slotTsMs','>=', rm.start),
+                fs.where('slotTsMs','<',  rm.end),
+                fs.orderBy('slotTsMs','desc'),
+                fs.limit(Math.max(1, limitN - out.length))
+              );
+            }, 'month-slotTsMs');
           }
 
         } else {
-          var q5 = fs.query(col, fs.orderBy('tsMs','desc'), fs.limit(limitN));
-          var snaps5 = await fs.getDocs(q5);
-          snaps5.forEach(function(docSnap){ pushUnique(out, docSnap.data()); });
+          var allOk = await safeCollect(function(){
+            return fs.query(col, fs.orderBy('tsMs','desc'), fs.limit(limitN));
+          }, 'all-tsMs');
+          if(!allOk || out.length === 0) {
+            await safeCollect(function(){
+              return fs.query(col, fs.limit(limitN));
+            }, 'all-limit');
+          }
         }
 
         out.sort(function(a,b){
@@ -1046,7 +1090,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
           return bx - ax;
         });
 
-        return out;
+        return out.slice(0, limitN);
       } catch(e) {
         console.error(e);
         if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return queryLogs(opts); }
@@ -1519,9 +1563,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   }
 
   async function doExport(mode, value) {
-    // ✅ Export reliability: smaller limits + clear feedback
+    if(mode === 'month') value = normalizeMonthValue(value);
+    if(mode === 'day' && !/^\d{4}-\d{2}-\d{2}$/.test(String(value||''))) {
+      toast('Export ไม่สำเร็จ', 'รูปแบบวันไม่ถูกต้อง');
+      return;
+    }
+
     var limitN = (mode === 'day') ? 5000 : (mode === 'month' ? 20000 : 20000);
-    // iOS/Safari: ต้องเปิดแท็บใหม่ก่อน (กัน popup ถูกบล็อกหลัง await)
     var ua = (navigator && navigator.userAgent) ? navigator.userAgent : '';
     var isIOS = /iP(ad|hone|od)/.test(ua);
     var isSafari = /^((?!chrome|android).)*safari/i.test(ua);
@@ -1529,41 +1577,53 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     if(isIOS || isSafari) {
       try { preWin = window.open('about:blank', '_blank', 'noopener,noreferrer'); } catch(e) { preWin = null; }
     }
-    toast('กำลังเตรียมไฟล์ EXCOM', 'ระบบกำลังสรุป Phase 1 / Phase 2 และ Detail Log…');
 
-    var logs;
-    if(mode === 'day') logs = await storage.queryLogs({ mode:'day', value:value, limit: limitN });
-    else if(mode === 'month') logs = await storage.queryLogs({ mode:'month', value:value, limit: limitN });
-    else logs = await storage.queryLogs({ mode:'all', limit: limitN });
+    try {
+      toast('กำลังเตรียมไฟล์ EXCOM', mode === 'month'
+        ? ('กำลังรวมข้อมูลทั้งเดือน ' + value + ' …')
+        : 'ระบบกำลังสรุป Phase 1 / Phase 2 และ Detail Log…');
 
-    if(!logs || logs.length === 0) {
-      toast('ไม่มีข้อมูล', 'ไม่พบ Log ในช่วงที่เลือก');
-      return;
+      var logs;
+      if(mode === 'day') logs = await storage.queryLogs({ mode:'day', value:value, limit: limitN });
+      else if(mode === 'month') logs = await storage.queryLogs({ mode:'month', value:value, limit: limitN });
+      else logs = await storage.queryLogs({ mode:'all', limit: limitN });
+
+      if(!logs || logs.length === 0) {
+        if(preWin && !preWin.closed) { try { preWin.close(); } catch(e) {} }
+        toast('ไม่มีข้อมูล', mode === 'month'
+          ? ('ไม่พบ Log ในเดือน ' + value)
+          : 'ไม่พบ Log ในช่วงที่เลือก');
+        return;
+      }
+
+      var scopeLabel = (mode === 'day') ? ('Daily Report ' + value) : (mode === 'month' ? ('Monthly Report ' + value) : 'All Logs');
+      var xml = buildExcomWorkbook(logs, scopeLabel);
+      var suffix = (mode === 'day') ? value : (mode === 'month' ? value : ('all-' + todayKey()));
+      var filename = 'laya-shuttle-excom-' + suffix + '.xls';
+      var mime = 'application/vnd.ms-excel;charset=utf-8';
+      var blob = new Blob(['﻿' + xml], { type: mime });
+
+      if(preWin) {
+        var url = URL.createObjectURL(blob);
+        try { preWin.location.href = url; } catch(e) { window.location.href = url; }
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+        toast('เปิดไฟล์แล้ว', 'ถ้าไม่ดาวน์โหลดอัตโนมัติ ให้กด Share/Save บนหน้าที่เปิดขึ้นมา');
+        return;
+      }
+
+      downloadBlob(filename, mime, blob);
+
+      if(logs.length >= limitN) {
+        toast('Export EXCOM เสร็จแล้ว', 'หมายเหตุ: ส่งออกสูงสุด ' + limitN + ' รายการในครั้งนี้');
+      } else {
+        toast('Export EXCOM เสร็จแล้ว', 'จำนวน Log ที่ใช้สรุป: ' + logs.length + ' รายการ');
+      }
+    } catch(e) {
+      console.error(e);
+      if(preWin && !preWin.closed) { try { preWin.close(); } catch(err) {} }
+      toast('Export ไม่สำเร็จ', (e && e.message) ? e.message : 'ลองใหม่อีกครั้ง หรือเปลี่ยนช่วงวันที่/เดือน');
     }
-
-    var scopeLabel = (mode === 'day') ? ('Daily Report ' + value) : (mode === 'month' ? ('Monthly Report ' + value) : 'All Logs');
-    var xml = buildExcomWorkbook(logs, scopeLabel);
-    var suffix = (mode === 'day') ? value : (mode === 'month' ? value : ('all-' + todayKey()));
-    var filename = 'laya-shuttle-excom-' + suffix + '.xls';
-    var mime = 'application/vnd.ms-excel;charset=utf-8';
-    var blob = new Blob(['\ufeff' + xml], { type: mime });
-
-    if(preWin) {
-      var url = URL.createObjectURL(blob);
-      try { preWin.location.href = url; } catch(e) { window.location.href = url; }
-      setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
-      toast('เปิดไฟล์แล้ว', 'ถ้าไม่ดาวน์โหลดอัตโนมัติ ให้กด Share/Save บนหน้าที่เปิดขึ้นมา');
-      return;
-    }
-
-    downloadBlob(filename, mime, blob);
-
-    if(logs.length >= limitN) {
-      toast('Export EXCOM เสร็จแล้ว', 'หมายเหตุ: ส่งออกสูงสุด ' + limitN + ' รายการ (ถ้าข้อมูลเยอะ แนะนำ Export รายวัน/รายเดือน)');
-    } else {
-      toast('เริ่มดาวน์โหลดไฟล์', 'ไฟล์มี EXCOM Summary + Phase Summary + Building Summary + Daily Summary + Detail Log');
-    }
-  }// ============================
+  }
   // Views
   // ============================
   function setStatusLine() {
