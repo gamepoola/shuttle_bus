@@ -659,7 +659,13 @@
         slot.available -= pax;
         st.slots[id] = slot;
         saveLocalState(st);
-        addLocalLog({ action:'BOOK', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, slotTsMs: slotTsMs(dateStr, timeStr), tsMs: Date.now() });
+        addLocalLog({
+          action:'BOOK', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr,
+          slotTsMs: slotTsMs(dateStr, timeStr), placeKey: placeKey,
+          pickup: timesInfo.pickup, destination: timesInfo.destination,
+          pickupTime: timesInfo.pickupTime, arriveTime: timesInfo.arriveTime,
+          tsMs: Date.now()
+        });
         return { ok:true };
       }
 
@@ -748,11 +754,19 @@ tx.set(logRef, {
         if(booked <= 0) return { ok:false, msg:'ห้องนี้ยังไม่มีการจองในรอบนี้' };
         if(pax > booked) return { ok:false, msg:'ยกเลิกเกินจำนวนที่จองไว้' };
         var left = booked - pax;
+        var existingInfo = (existing && typeof existing === 'object') ? Object.assign({}, existing) : {};
         if(left === 0) delete slot.bookings[roomK];
         else slot.bookings[roomK].pax = left;
         slot.available = Math.min(slot.capacity || CAPACITY_PER_TRIP, (slot.available || 0) + pax);
         saveLocalState(st);
-        addLocalLog({ action:'CANCEL', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr, slotTsMs: slotTsMs(dateStr, timeStr), tsMs: Date.now() });
+        addLocalLog({
+          action:'CANCEL', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr,
+          slotTsMs: slotTsMs(dateStr, timeStr),
+          placeKey: existingInfo.placeKey || '',
+          pickup: existingInfo.pickup || '', destination: existingInfo.destination || '',
+          pickupTime: existingInfo.pickupTime || '', arriveTime: existingInfo.arriveTime || '',
+          tsMs: Date.now()
+        });
         return { ok:true };
       }
 
@@ -859,6 +873,11 @@ tx.set(logRef, {
             date: dateStr,
             month: monthKey,
             slotTsMs: slotTsMs(dateStr, timeStr),
+            placeKey: (existing && existing.placeKey) ? existing.placeKey : '',
+            pickup: (existing && existing.pickup) ? existing.pickup : '',
+            destination: (existing && existing.destination) ? existing.destination : '',
+            pickupTime: (existing && existing.pickupTime) ? existing.pickupTime : '',
+            arriveTime: (existing && existing.arriveTime) ? existing.arriveTime : '',
             tsMs: Date.now(),
             ts: fs.serverTimestamp()
           });
@@ -1116,47 +1135,387 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   function saveUi(ui) { localStorage.setItem(LS_UI, JSON.stringify(ui)); }
 
   // ============================
-  // Excel export
+  // Excel export / EXCOM summary
   // ============================
-  function buildExcelHtml(logs) {
-    var rows = logs.map(function(e){
-      var ts = e.tsMs ? new Date(e.tsMs).toLocaleString() : '';
-      var action = e.action || '';
-      var dir = e.dir === 'out' ? 'ขาไป' : (e.dir === 'back' ? 'ขากลับ' : (e.dir || ''));
-      var time = e.time || '';
-      var room = e.room || '';
-      var pax = (typeof e.pax === 'number') ? e.pax : (e.pax || '');
-      var pickup = e.pickup || '';
-      var destination = e.destination || '';
-      var pickupTime = e.pickupTime || '';
-      var arriveTime = e.arriveTime || '';
-      var date = e.date || '';
-      return '\n<tr>' +
-        '<td>' + escapeHtml(ts) + '</td>' +
-        '<td>' + escapeHtml(date) + '</td>' +
-        '<td>' + escapeHtml(action) + '</td>' +
-        '<td>' + escapeHtml(dir) + '</td>' +
-        '<td>' + escapeHtml(time) + '</td>' +
-        '<td>' + escapeHtml(room) + '</td>' +
-        '<td>' + escapeHtml(pax) + '</td>' +
-        '<td>' + escapeHtml(pickup) + '</td>' +
-        '<td>' + escapeHtml(destination) + '</td>' +
-        '<td>' + escapeHtml(pickupTime) + '</td>' +
-        '<td>' + escapeHtml(arriveTime) + '</td>' +
-      '</tr>';
-    }).join('\n');
+  function xmlEscape(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
 
-    return (
-      '<!doctype html>\n<html>\n<head>\n<meta charset="UTF-8" />\n</head>\n<body>' +
-      '<table border="1">' +
-      '<thead><tr>' +
-      '<th>Timestamp</th><th>Date</th><th>Action</th><th>Direction</th><th>Time</th><th>Room</th><th>Pax</th>' +
-      '<th>Pickup</th><th>Destination</th><th>Pickup time</th><th>Arrival time</th>' +
-      '</tr></thead>' +
-      '<tbody>' + rows + '</tbody>' +
-      '</table>' +
-      '</body></html>'
-    );
+  function numOrZero(v) {
+    var n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function normalizeRoom(room) {
+    return String(room || '').trim().toUpperCase();
+  }
+
+  function buildingFromRoom(room) {
+    var r = normalizeRoom(room);
+    if(/^A/.test(r)) return 'A';
+    if(/^B/.test(r)) return 'B';
+    if(/^C/.test(r)) return 'C';
+    if(/^D/.test(r)) return 'D';
+    return 'Unknown';
+  }
+
+  function phaseFromBuilding(building) {
+    if(building === 'A' || building === 'B' || building === 'C') return 'Phase 1';
+    if(building === 'D') return 'Phase 2';
+    return 'Unknown';
+  }
+
+  function signedPaxFromLog(e) {
+    var pax = Math.abs(numOrZero(e && e.pax));
+    if((e && e.action) === 'CANCEL') return -pax;
+    return pax;
+  }
+
+  function formatPercentValue(n) {
+    var val = Number(n);
+    if(!Number.isFinite(val)) return '0.0%';
+    return val.toFixed(1) + '%';
+  }
+
+  function sanitizeSheetName(name, fallback) {
+    var s = String(name || fallback || 'Sheet').replace(/[\\\/?*\[\]:]/g, ' ').trim();
+    if(!s) s = fallback || 'Sheet';
+    if(s.length > 31) s = s.slice(0, 31);
+    return s;
+  }
+
+  function pushAgg(map, key, defaults) {
+    if(!map[key]) map[key] = Object.assign({}, defaults || {});
+    return map[key];
+  }
+
+  function aggregateLogsForReport(logs) {
+    logs = Array.isArray(logs) ? logs.slice() : [];
+
+    var out = {
+      totalLogs: logs.length,
+      grossBookedGuests: 0,
+      cancelledGuests: 0,
+      netGuests: 0,
+      bookEntries: 0,
+      cancelEntries: 0,
+      phaseMap: {},
+      buildingMap: {},
+      dateMap: {},
+      timeMap: {},
+      detailRows: []
+    };
+
+    logs.forEach(function(e){
+      if(!e) return;
+      var pax = Math.abs(numOrZero(e.pax));
+      var signed = signedPaxFromLog(e);
+      var building = buildingFromRoom(e.room || '');
+      var phase = phaseFromBuilding(building);
+      var date = String(e.date || '');
+      var dirLabel = e.dir === 'out' ? 'ขาไป' : (e.dir === 'back' ? 'ขากลับ' : (e.dir || 'Unknown'));
+      var time = String(e.time || '');
+      var phaseRec = pushAgg(out.phaseMap, phase, { phase: phase, buildings: {}, gross: 0, cancel: 0, net: 0, entries: 0 });
+      var buildingRec = pushAgg(out.buildingMap, building, { building: building, phase: phase, gross: 0, cancel: 0, net: 0, entries: 0 });
+      var dateRec = pushAgg(out.dateMap, date || 'Unknown', {
+        date: date || 'Unknown', gross: 0, cancel: 0, net: 0,
+        phase1Net: 0, phase2Net: 0, unknownNet: 0
+      });
+      var timeKeyAgg = dirLabel + '|' + time;
+      var timeRec = pushAgg(out.timeMap, timeKeyAgg, { dir: dirLabel, time: time, gross: 0, cancel: 0, net: 0, entries: 0 });
+
+      phaseRec.entries += 1;
+      buildingRec.entries += 1;
+      timeRec.entries += 1;
+      phaseRec.buildings[building] = true;
+
+      if(e.action === 'CANCEL') {
+        out.cancelEntries += 1;
+        out.cancelledGuests += pax;
+        phaseRec.cancel += pax;
+        buildingRec.cancel += pax;
+        dateRec.cancel += pax;
+        timeRec.cancel += pax;
+      } else {
+        out.bookEntries += 1;
+        out.grossBookedGuests += pax;
+        phaseRec.gross += pax;
+        buildingRec.gross += pax;
+        dateRec.gross += pax;
+        timeRec.gross += pax;
+      }
+
+      out.netGuests += signed;
+      phaseRec.net += signed;
+      buildingRec.net += signed;
+      dateRec.net += signed;
+      timeRec.net += signed;
+
+      if(phase === 'Phase 1') dateRec.phase1Net += signed;
+      else if(phase === 'Phase 2') dateRec.phase2Net += signed;
+      else dateRec.unknownNet += signed;
+
+      out.detailRows.push({
+        timestamp: e.tsMs ? new Date(e.tsMs).toLocaleString() : '',
+        date: date,
+        action: e.action || '',
+        direction: dirLabel,
+        round: time,
+        building: building,
+        phase: phase,
+        room: e.room || '',
+        signedPax: signed,
+        pax: pax,
+        pickup: e.pickup || '',
+        destination: e.destination || '',
+        pickupTime: e.pickupTime || '',
+        arriveTime: e.arriveTime || ''
+      });
+    });
+
+    return out;
+  }
+
+  function buildWorkbookXml(sheets) {
+    var styles = '' +
+      '<Styles>' +
+        '<Style ss:ID="Default" ss:Name="Normal">' +
+          '<Alignment ss:Vertical="Center"/>' +
+          '<Borders/>' +
+          '<Font ss:FontName="Calibri" ss:Size="11"/>' +
+          '<Interior/>' +
+          '<NumberFormat/>' +
+          '<Protection/>' +
+        '</Style>' +
+        '<Style ss:ID="sTitle">' +
+          '<Font ss:FontName="Calibri" ss:Size="14" ss:Bold="1"/>' +
+        '</Style>' +
+        '<Style ss:ID="sSubtitle">' +
+          '<Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/>' +
+        '</Style>' +
+        '<Style ss:ID="sHead">' +
+          '<Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1"/>' +
+          '<Interior ss:Color="#D9E2F3" ss:Pattern="Solid"/>' +
+          '<Borders>' +
+            '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+          '</Borders>' +
+        '</Style>' +
+        '<Style ss:ID="sText">' +
+          '<Borders>' +
+            '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+          '</Borders>' +
+        '</Style>' +
+        '<Style ss:ID="sInt">' +
+          '<Borders>' +
+            '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+          '</Borders>' +
+          '<NumberFormat ss:Format="0"/>' +
+        '</Style>' +
+        '<Style ss:ID="sPct">' +
+          '<Borders>' +
+            '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+            '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' +
+          '</Borders>' +
+          '<NumberFormat ss:Format="0.0%"/>' +
+        '</Style>' +
+      '</Styles>';
+
+    function cellXml(cell) {
+      if(cell == null) cell = { v: '' };
+      if(typeof cell !== 'object' || Array.isArray(cell)) cell = { v: cell };
+      var v = cell.v;
+      var style = cell.style || ((cell.t === 'Number' || typeof v === 'number') ? 'sInt' : 'sText');
+      var t = cell.t || ((typeof v === 'number') ? 'Number' : 'String');
+      var data = (t === 'Number') ? String(Number(v || 0)) : xmlEscape(v == null ? '' : v);
+      return '<Cell ss:StyleID="' + style + '"><Data ss:Type="' + t + '">' + data + '</Data></Cell>';
+    }
+
+    var worksheets = sheets.map(function(sheet){
+      var rowsXml = (sheet.rows || []).map(function(row){
+        return '<Row>' + row.map(cellXml).join('') + '</Row>';
+      }).join('');
+      return '<Worksheet ss:Name="' + xmlEscape(sanitizeSheetName(sheet.name, 'Sheet')) + '"><Table>' + rowsXml + '</Table></Worksheet>';
+    }).join('');
+
+    return '<?xml version="1.0"?>' +
+      '<?mso-application progid="Excel.Sheet"?>' +
+      '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" ' +
+        'xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+        'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
+        'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" ' +
+        'xmlns:html="http://www.w3.org/TR/REC-html40">' +
+        styles + worksheets +
+      '</Workbook>';
+  }
+
+  function buildExcomWorkbook(logs, scopeLabel) {
+    var agg = aggregateLogsForReport(logs);
+    var totalNet = agg.netGuests > 0 ? agg.netGuests : 0;
+    var pctBase = totalNet > 0 ? totalNet : (agg.grossBookedGuests > 0 ? agg.grossBookedGuests : 0);
+
+    function share(n) {
+      if(!pctBase) return 0;
+      return Math.max(0, numOrZero(n)) / pctBase;
+    }
+
+    var phaseOrder = ['Phase 1', 'Phase 2', 'Unknown'];
+    var phaseRows = phaseOrder.filter(function(k){ return agg.phaseMap[k]; }).map(function(k){
+      var rec = agg.phaseMap[k];
+      return [
+        { v: rec.phase, style: 'sText' },
+        { v: Object.keys(rec.buildings || {}).filter(Boolean).join(', '), style: 'sText' },
+        { v: rec.gross, t: 'Number', style: 'sInt' },
+        { v: rec.cancel, t: 'Number', style: 'sInt' },
+        { v: rec.net, t: 'Number', style: 'sInt' },
+        { v: share(rec.net), t: 'Number', style: 'sPct' }
+      ];
+    });
+
+    var buildingOrder = ['A', 'B', 'C', 'D', 'Unknown'];
+    var buildingRows = buildingOrder.filter(function(k){ return agg.buildingMap[k]; }).map(function(k){
+      var rec = agg.buildingMap[k];
+      return [
+        { v: rec.building, style: 'sText' },
+        { v: rec.phase, style: 'sText' },
+        { v: rec.gross, t: 'Number', style: 'sInt' },
+        { v: rec.cancel, t: 'Number', style: 'sInt' },
+        { v: rec.net, t: 'Number', style: 'sInt' },
+        { v: share(rec.net), t: 'Number', style: 'sPct' },
+        { v: rec.entries, t: 'Number', style: 'sInt' }
+      ];
+    });
+
+    var dateRows = Object.keys(agg.dateMap).sort().map(function(k){
+      var rec = agg.dateMap[k];
+      return [
+        { v: rec.date, style: 'sText' },
+        { v: rec.gross, t: 'Number', style: 'sInt' },
+        { v: rec.cancel, t: 'Number', style: 'sInt' },
+        { v: rec.net, t: 'Number', style: 'sInt' },
+        { v: rec.phase1Net, t: 'Number', style: 'sInt' },
+        { v: rec.phase2Net, t: 'Number', style: 'sInt' },
+        { v: rec.unknownNet, t: 'Number', style: 'sInt' }
+      ];
+    });
+
+    var timeRows = Object.keys(agg.timeMap).map(function(k){ return agg.timeMap[k]; })
+      .sort(function(a,b){
+        var ak = String(a.dir || '') + '|' + String(a.time || '');
+        var bk = String(b.dir || '') + '|' + String(b.time || '');
+        return ak.localeCompare(bk);
+      }).map(function(rec){
+        return [
+          { v: rec.dir, style: 'sText' },
+          { v: rec.time, style: 'sText' },
+          { v: rec.gross, t: 'Number', style: 'sInt' },
+          { v: rec.cancel, t: 'Number', style: 'sInt' },
+          { v: rec.net, t: 'Number', style: 'sInt' },
+          { v: share(rec.net), t: 'Number', style: 'sPct' },
+          { v: rec.entries, t: 'Number', style: 'sInt' }
+        ];
+      });
+
+    var detailRows = agg.detailRows.map(function(r){
+      return [
+        { v: r.timestamp, style: 'sText' },
+        { v: r.date, style: 'sText' },
+        { v: r.action, style: 'sText' },
+        { v: r.direction, style: 'sText' },
+        { v: r.round, style: 'sText' },
+        { v: r.building, style: 'sText' },
+        { v: r.phase, style: 'sText' },
+        { v: r.room, style: 'sText' },
+        { v: r.signedPax, t: 'Number', style: 'sInt' },
+        { v: r.pax, t: 'Number', style: 'sInt' },
+        { v: r.pickup, style: 'sText' },
+        { v: r.destination, style: 'sText' },
+        { v: r.pickupTime, style: 'sText' },
+        { v: r.arriveTime, style: 'sText' }
+      ];
+    });
+
+    var phase1Net = agg.phaseMap['Phase 1'] ? agg.phaseMap['Phase 1'].net : 0;
+    var phase2Net = agg.phaseMap['Phase 2'] ? agg.phaseMap['Phase 2'].net : 0;
+    var unknownNet = agg.phaseMap['Unknown'] ? agg.phaseMap['Unknown'].net : 0;
+
+    var summaryRows = [
+      [{ v: 'LAYA Shuttle Bus – EXCOM Summary', style: 'sTitle' }],
+      [{ v: 'Scope', style: 'sHead' }, { v: scopeLabel, style: 'sText' }],
+      [{ v: 'Generated at', style: 'sHead' }, { v: new Date().toLocaleString(), style: 'sText' }],
+      [{ v: '% basis', style: 'sHead' }, { v: 'คิดจาก Net Guests Using Service ในช่วงที่ export', style: 'sText' }],
+      [],
+      [{ v: 'KPI', style: 'sHead' }, { v: 'Value', style: 'sHead' }],
+      [{ v: 'Total Log Entries', style: 'sText' }, { v: agg.totalLogs, t: 'Number', style: 'sInt' }],
+      [{ v: 'Gross Booked Guests', style: 'sText' }, { v: agg.grossBookedGuests, t: 'Number', style: 'sInt' }],
+      [{ v: 'Cancelled Guests', style: 'sText' }, { v: agg.cancelledGuests, t: 'Number', style: 'sInt' }],
+      [{ v: 'Net Guests Using Service', style: 'sText' }, { v: agg.netGuests, t: 'Number', style: 'sInt' }],
+      [{ v: 'Book Entries', style: 'sText' }, { v: agg.bookEntries, t: 'Number', style: 'sInt' }],
+      [{ v: 'Cancel Entries', style: 'sText' }, { v: agg.cancelEntries, t: 'Number', style: 'sInt' }],
+      [],
+      [{ v: 'Phase Mix', style: 'sSubtitle' }],
+      [{ v: 'Phase 1 (A/B/C) Net Guests', style: 'sText' }, { v: phase1Net, t: 'Number', style: 'sInt' }],
+      [{ v: 'Phase 1 Share %', style: 'sText' }, { v: share(phase1Net), t: 'Number', style: 'sPct' }],
+      [{ v: 'Phase 2 (D) Net Guests', style: 'sText' }, { v: phase2Net, t: 'Number', style: 'sInt' }],
+      [{ v: 'Phase 2 Share %', style: 'sText' }, { v: share(phase2Net), t: 'Number', style: 'sPct' }],
+      [{ v: 'Unknown Share %', style: 'sText' }, { v: share(unknownNet), t: 'Number', style: 'sPct' }]
+    ];
+
+    var sheets = [
+      { name: 'EXCOM Summary', rows: summaryRows },
+      {
+        name: 'Phase Summary',
+        rows: [
+          [{ v: 'Phase Summary', style: 'sTitle' }],
+          [{ v: 'Phase', style: 'sHead' }, { v: 'Buildings', style: 'sHead' }, { v: 'Gross Booked Guests', style: 'sHead' }, { v: 'Cancelled Guests', style: 'sHead' }, { v: 'Net Guests', style: 'sHead' }, { v: 'Share %', style: 'sHead' }]
+        ].concat(phaseRows)
+      },
+      {
+        name: 'Building Summary',
+        rows: [
+          [{ v: 'Building Summary', style: 'sTitle' }],
+          [{ v: 'Building', style: 'sHead' }, { v: 'Phase', style: 'sHead' }, { v: 'Gross Booked Guests', style: 'sHead' }, { v: 'Cancelled Guests', style: 'sHead' }, { v: 'Net Guests', style: 'sHead' }, { v: 'Share %', style: 'sHead' }, { v: 'Log Entries', style: 'sHead' }]
+        ].concat(buildingRows)
+      },
+      {
+        name: 'Daily Summary',
+        rows: [
+          [{ v: 'Daily Summary', style: 'sTitle' }],
+          [{ v: 'Date', style: 'sHead' }, { v: 'Gross Booked Guests', style: 'sHead' }, { v: 'Cancelled Guests', style: 'sHead' }, { v: 'Net Guests', style: 'sHead' }, { v: 'Phase 1 Net', style: 'sHead' }, { v: 'Phase 2 Net', style: 'sHead' }, { v: 'Unknown Net', style: 'sHead' }]
+        ].concat(dateRows)
+      },
+      {
+        name: 'Round Summary',
+        rows: [
+          [{ v: 'Round Summary', style: 'sTitle' }],
+          [{ v: 'Direction', style: 'sHead' }, { v: 'Round Time', style: 'sHead' }, { v: 'Gross Booked Guests', style: 'sHead' }, { v: 'Cancelled Guests', style: 'sHead' }, { v: 'Net Guests', style: 'sHead' }, { v: 'Share %', style: 'sHead' }, { v: 'Log Entries', style: 'sHead' }]
+        ].concat(timeRows)
+      },
+      {
+        name: 'Detail Log',
+        rows: [
+          [{ v: 'Detail Log', style: 'sTitle' }],
+          [{ v: 'Timestamp', style: 'sHead' }, { v: 'Date', style: 'sHead' }, { v: 'Action', style: 'sHead' }, { v: 'Direction', style: 'sHead' }, { v: 'Round Time', style: 'sHead' }, { v: 'Building', style: 'sHead' }, { v: 'Phase', style: 'sHead' }, { v: 'Room', style: 'sHead' }, { v: 'Signed Pax', style: 'sHead' }, { v: 'Pax', style: 'sHead' }, { v: 'Pickup', style: 'sHead' }, { v: 'Destination', style: 'sHead' }, { v: 'Pickup Time', style: 'sHead' }, { v: 'Arrival Time', style: 'sHead' }]
+        ].concat(detailRows)
+      }
+    ];
+
+    return buildWorkbookXml(sheets);
   }
 
   async function doExport(mode, value) {
@@ -1170,7 +1529,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     if(isIOS || isSafari) {
       try { preWin = window.open('about:blank', '_blank', 'noopener,noreferrer'); } catch(e) { preWin = null; }
     }
-    toast('กำลังเตรียมไฟล์', 'โปรดรอสักครู่…');
+    toast('กำลังเตรียมไฟล์ EXCOM', 'ระบบกำลังสรุป Phase 1 / Phase 2 และ Detail Log…');
 
     var logs;
     if(mode === 'day') logs = await storage.queryLogs({ mode:'day', value:value, limit: limitN });
@@ -1182,14 +1541,14 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       return;
     }
 
-    var html = buildExcelHtml(logs);
+    var scopeLabel = (mode === 'day') ? ('Daily Report ' + value) : (mode === 'month' ? ('Monthly Report ' + value) : 'All Logs');
+    var xml = buildExcomWorkbook(logs, scopeLabel);
     var suffix = (mode === 'day') ? value : (mode === 'month' ? value : ('all-' + todayKey()));
-    var filename = 'laya-shuttle-logs-' + suffix + '.xls';
+    var filename = 'laya-shuttle-excom-' + suffix + '.xls';
     var mime = 'application/vnd.ms-excel;charset=utf-8';
-    var blob = new Blob(['\ufeff' + html], { type: mime });
+    var blob = new Blob(['\ufeff' + xml], { type: mime });
 
     if(preWin) {
-      // ใส่ไฟล์ลงแท็บที่เปิดไว้แล้ว
       var url = URL.createObjectURL(blob);
       try { preWin.location.href = url; } catch(e) { window.location.href = url; }
       setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
@@ -1200,9 +1559,9 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     downloadBlob(filename, mime, blob);
 
     if(logs.length >= limitN) {
-      toast('Export เสร็จแล้ว', 'หมายเหตุ: ส่งออกสูงสุด ' + limitN + ' รายการ (ถ้าข้อมูลเยอะ แนะนำ Export รายวัน/รายเดือน)');
+      toast('Export EXCOM เสร็จแล้ว', 'หมายเหตุ: ส่งออกสูงสุด ' + limitN + ' รายการ (ถ้าข้อมูลเยอะ แนะนำ Export รายวัน/รายเดือน)');
     } else {
-      toast('เริ่มดาวน์โหลดไฟล์', 'ถ้าไม่ดาวน์โหลดอัตโนมัติ ให้ดูแท็บใหม่/หน้าดาวน์โหลดของเบราว์เซอร์');
+      toast('เริ่มดาวน์โหลดไฟล์', 'ไฟล์มี EXCOM Summary + Phase Summary + Building Summary + Daily Summary + Detail Log');
     }
   }// ============================
   // Views
@@ -1632,7 +1991,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     $('view').innerHTML =
       '<section class="card">' +
         '<div class="card-h">' +
-          '<div><h2>บันทึก/สถิติ</h2><p class="hint">เดือน <b>'+escapeHtml(monthKey)+'</b> • Export แยก วัน/เดือน/ทั้งหมด ได้</p></div>' +
+          '<div><h2>บันทึก/สถิติ</h2><p class="hint">เดือน <b>'+escapeHtml(monthKey)+'</b> • Export แบบ EXCOM ได้ โดยแยก A/B/C = Phase 1 และ D = Phase 2</p></div>' +
           '<div class="row"><button class="btn ghost" onclick="window.__goSchedule()">กลับหน้าตาราง</button></div>' +
         '</div>' +
         '<div class="card-b">' +
@@ -1647,7 +2006,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
                 '</div>' +
                 '<div class="row"><button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button></div>' +
               '</div>' +
-              '<div class="mini">หมายเหตุ: Export วัน/เดือน จะดึง log จาก Firebase ตามช่วงเวลา • ถ้าข้อมูลเยอะอาจใช้เวลาสักครู่</div>' +
+              '<div class="mini">หมายเหตุ: ไฟล์ export จะมี EXCOM Summary, Phase Summary, Building Summary, Daily Summary, Round Summary และ Detail Log โดยคิด % จาก Net Guests Using Service ในช่วงที่เลือก</div>' +
             '</div>' +
           '</div>' +
 
