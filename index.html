@@ -3,261 +3,183 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Laya shuttle bus</title>
+  <title>Shuttle Service | Radisson Resort Layan Phuket</title>
   <style>
-    :root{
-      --bg1:#07121f; --bg2:#0b1a2a;
-      --text:#f5f0e6; --muted:#cbbfae;
-      --gold:#836A45;
-      --gold2:#B0A390;
-      --line: rgba(131,106,69,.22);
-      --shadow: 0 12px 34px rgba(0,0,0,.40);
-      --ok:#22c55e;
-      --danger:#ff5a5f;
-      --yellow:#f2c94c;
+    :root {
+      color-scheme: light;
+      --canvas: #f5f9fa;
+      --surface: #fff;
+      --surface-soft: #f5fbfb;
+      --tint: #e6f4f5;
+      --text: #16343d;
+      --muted: #4d6970;
+      --primary: #086779;
+      --primary-hover: #075463;
+      --accent: #259aab;
+      --line: #dce8eb;
+      --control-line: #cbdfe3;
+      --shadow: 0 8px 24px rgba(23, 62, 73, .055);
+      --ok: #116c58;
+      --danger: #a6303a;
     }
 
-    *{ box-sizing:border-box; }
-    html, body{ height:100%; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--text);
-      background:
-        radial-gradient(1200px 800px at 20% 0%, rgba(131,106,69,.14), transparent 60%),
-        radial-gradient(900px 700px at 90% 20%, rgba(176,163,144,.10), transparent 55%),
-        linear-gradient(180deg, var(--bg1), var(--bg2));
-      min-height:100vh;
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: "Noto Sans Thai", "Leelawadee UI", "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background: var(--canvas);
     }
+    button, input, select { font: inherit; }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 18px; }
 
-    .wrap{ max-width: 1120px; margin: 0 auto; padding: 18px; }
-
-    header{
-      position: sticky; top: 0;
-      backdrop-filter: blur(10px);
-      background: rgba(7,18,31,.65);
-      border-bottom: 1px solid var(--line);
+    header {
+      position: sticky;
+      top: 0;
       z-index: 10;
+      background: var(--surface);
+      border-top: 4px solid var(--accent);
+      border-bottom: 1px solid var(--line);
     }
+    .brand { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand-left { display: flex; align-items: center; gap: 18px; min-width: 0; }
+    .brand-logo { display: block; width: 148px; height: auto; flex: 0 0 auto; }
+    .brand-copy { border-left: 1px solid var(--line); padding-left: 18px; }
+    h1 { margin: 0; font-size: 25px; line-height: 1.2; }
+    .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .status { display: flex; align-items: center; gap: 9px; padding-top: 14px; padding-bottom: 0; color: var(--muted); font-size: 13px; }
+    .status[data-live="true"] { color: var(--ok); font-weight: 700; }
+    .status[data-live="true"] .dot { background: var(--ok); }
+    .nav { display: flex; flex-wrap: wrap; gap: 8px; }
 
-    .brand{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 14px 18px; }
-    .brand-left{ display:flex; align-items:center; gap:12px; min-width:0; }
-
-    .mark{
-      width: 46px; height: 46px; border-radius: 16px;
-      background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.14), transparent 55%),
-                  linear-gradient(135deg, rgba(131,106,69,.38), rgba(131,106,69,.08));
-      border: 1px solid rgba(131,106,69,.35);
-      box-shadow: var(--shadow);
-      display:grid; place-items:center;
-      font-weight: 900;
-      color: var(--gold2);
-      letter-spacing: .5px;
-      font-size: 18px;
-      flex: 0 0 auto;
-    }
-
-    h1{ margin:0; font-size: 20px; letter-spacing: .6px; }
-    .sub{ margin:2px 0 0 0; color: var(--muted); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70vw; }
-
-    .nav{ display:flex; gap: 10px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
-    .chip{
-      padding: 9px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(131,106,69,.22);
-      background: rgba(15,36,56,.35);
-      color: var(--text);
+    .chip, .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 9px 14px;
+      min-height: 40px;
+      border: 1px solid var(--control-line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--primary);
       font-size: 14px;
-      font-weight: 650;
-      cursor:pointer;
-      user-select:none;
-      text-decoration:none;
-      display:inline-block;
+      font-weight: 750;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
     }
-    .chip.active{ border-color: rgba(131,106,69,.55); background: rgba(131,106,69,.14); color: var(--gold2); }
+    .chip:hover, .btn:hover { background: var(--tint); }
+    .chip.active, .btn.pick, .btn.primary { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .chip.active:hover, .btn.pick:hover, .btn.primary:hover { background: var(--primary-hover); }
+    .btn.closed { background: #edf3f4; border-color: var(--line); color: var(--muted); }
+    .btn.danger { background: var(--surface); border-color: var(--control-line); color: var(--primary); }
+    .btn.danger:hover { color: var(--danger); background: #fff1f2; border-color: #efc7cb; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    :is(a, button, input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-    .card{
-      background: linear-gradient(180deg, rgba(15,36,56,.78), rgba(12,29,47,.72));
-      border: 1px solid rgba(131,106,69,.18);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    @media (min-width: 920px) {
+      .grid { grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); align-items: start; }
     }
-    .card-h{
-      padding: 16px 16px 12px 16px;
-      border-bottom: 1px solid rgba(131,106,69,.16);
-      display:flex; align-items:flex-end; justify-content:space-between; gap: 12px;
-      flex-wrap:wrap;
+    .card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 19px; box-shadow: var(--shadow); }
+    .card-h { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 22px 22px 12px; }
+    .card-h h2 { margin: 0; font-size: 24px; line-height: 1.35; }
+    .card-h .hint { margin: 6px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .card-b { padding: 12px 22px 22px; }
+    .card.inset { background: var(--surface-soft); box-shadow: none; }
+
+    .slots { display: grid; gap: 8px; }
+    .slot { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); }
+    .slot .meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 16px; min-width: 0; }
+    .slot .time { min-width: 68px; font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .slot .seat { color: var(--muted); font-size: 14px; }
+    .slot .seat b { color: var(--primary); font-size: 16px; }
+    .slot .seat b.danger { color: var(--danger); }
+    .slot .btn { min-width: 68px; min-height: 34px; padding: 5px 10px; flex: 0 0 auto; }
+    .closed-label { color: var(--muted); font-size: 12px; }
+
+    .row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .schedule-controls { width: 100%; align-items: flex-end; }
+    .field { display: flex; flex-direction: column; gap: 5px; width: 100%; min-width: 0; }
+    label { color: var(--muted); font-size: 14px; font-weight: 650; }
+    input, select { width: 100%; min-width: 0; min-height: 44px; padding: 9px 12px; border: 1px solid var(--control-line); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 16px; font-weight: 650; }
+    select { cursor: pointer; }
+    input[readonly] { background: var(--surface-soft); }
+    input::placeholder { color: var(--muted); }
+
+    .kpi { display: flex; flex-direction: column; gap: 5px; padding: 14px; border-radius: 14px; background: var(--tint); }
+    .kpi .big { font-size: 29px; font-weight: 850; }
+    .kpi .small { color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .divider { height: 1px; margin: 12px 0; background: var(--line); }
+    .barwrap { display: grid; gap: 7px; }
+    .bar { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+    .bar .lbl { flex: 0 1 45%; min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .bar .track { flex: 1; height: 9px; overflow: hidden; border-radius: 999px; background: var(--line); }
+    .bar .fill { height: 100%; width: 0; background: var(--accent); }
+    .bar .num { width: 28px; color: var(--primary); font-size: 13px; font-weight: 800; text-align: right; }
+    .footer-actions { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 7px; }
+    .footer-actions .btn { font-size: 12px; padding: 6px 9px; }
+    .pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border-radius: 20px; background: var(--tint); color: var(--muted); font-size: 12px; font-weight: 650; }
+    .dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--accent); }
+    .mini, .note { margin-top: 9px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .note { padding: 8px 11px; border-radius: 10px; background: var(--tint); }
+    .note:empty { display: none; }
+    .danger-text { color: var(--danger); }
+
+    .booking { max-width: 860px; }
+    .booking-summary { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 14px; padding: 13px 15px; border-radius: 14px; background: var(--tint); }
+    .booking-summary strong { display: block; margin-bottom: 4px; font-size: 17px; }
+    .booking-summary span { color: var(--primary); font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .booking-summary .booking-availability { font-size: 13px; }
+    .booking-summary .booking-availability.danger { color: var(--danger); }
+    .booking-actions { margin-top: 12px; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); }
+    th, td { padding: 10px; font-size: 13px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-weight: 750; }
+    tr:last-child td { border-bottom: 0; }
+
+    .toast { display: none; position: fixed; z-index: 30; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(520px, 92vw); padding: 12px 15px; border: 1px solid var(--control-line); border-radius: 13px; background: var(--surface); box-shadow: 0 10px 28px rgba(23, 62, 73, .16); }
+    .toast.show { display: block; }
+    .toast .t { font-weight: 800; }
+    .toast .d { margin-top: 3px; color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 600px) {
+      header { position: static; }
+      .wrap { padding-inline: 12px; }
+      .brand { flex-wrap: wrap; gap: 11px; padding-block: 12px; }
+      .brand-left { gap: 12px; }
+      .brand-logo { width: 109px; }
+      .brand-copy { padding-left: 12px; }
+      h1 { font-size: 19px; }
+      .sub { font-size: 12px; }
+      .nav { width: 100%; }
+      .status { padding-top: 10px; }
+      main.wrap { padding-top: 10px; }
+      .card-h { padding: 17px 14px 8px; }
+      .card-b { padding: 10px 14px 15px; }
+      .card-h h2 { font-size: 21px; }
+      .booking-actions .btn { width: 100%; min-height: 44px; }
+      .schedule-controls .field { max-width: 100% !important; }
     }
-    .card-h h2{ margin:0; font-size: 17px; letter-spacing:.4px; }
-    .card-h .hint{ margin:4px 0 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
-    .card-b{ padding: 14px 16px 16px 16px; }
-
-    .grid{ display:grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 980px){ .grid{ grid-template-columns: 1.1fr .9fr; } }
-
-    .slots{ display:grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 640px){ .slots{ grid-template-columns: 1fr 1fr; } }
-
-    .slot{
-      display:flex; align-items:center; justify-content:space-between; gap: 12px;
-      padding: 14px;
-      border-radius: 18px;
-      border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.35);
-    }
-    .slot .meta{ display:flex; flex-direction:column; gap: 6px; min-width:0; }
-    .slot .time{ font-size: 22px; font-weight: 900; letter-spacing:.3px; }
-    .slot .seat{ font-size: 15.5px; color: var(--muted); }
-    .slot .seat b{ font-size: 20px; color: var(--ok); }
-    .slot .seat b.danger{ color: var(--danger); }
-
-    .btn{
-      appearance:none;
-      border: 1px solid rgba(131,106,69,.35);
-      background: rgba(15,36,56,.35);
-      color: var(--text);
-      padding: 11px 14px;
-      border-radius: 16px;
-      font-weight: 850;
-      letter-spacing: .2px;
-      cursor:pointer;
-      transition: transform .06s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
-      user-select:none;
-      min-width: 110px;
-      text-align:center;
-      font-size: 15px;
-    }
-    .btn:hover{ border-color: rgba(131,106,69,.60); background: rgba(15,36,56,.45); }
-    .btn:active{ transform: translateY(1px); }
-    .btn:disabled{ opacity: .55; cursor:not-allowed; transform:none; }
-
-    /* ปุ่มปิดแล้ว (สีเดิม/เข้ม) */
-    .btn.closed{
-      background: rgba(15,36,56,.30);
-      border-color: rgba(131,106,69,.18);
-      color: rgba(245,240,230,.65);
-    }
-
-    /* ปุ่มเลือก (สีเหลือง) */
-    .btn.pick{
-      background: linear-gradient(135deg, rgba(242,201,76,.95), rgba(242,201,76,.65));
-      border-color: rgba(242,201,76,.85);
-      color: #0b1a2a;
-    }
-    .btn.pick:hover{
-      background: linear-gradient(135deg, rgba(242,201,76,1), rgba(242,201,76,.72));
-      border-color: rgba(242,201,76,1);
-    }
-
-    .btn.primary{ background: linear-gradient(135deg, rgba(131,106,69,.22), rgba(131,106,69,.12)); border-color: rgba(131,106,69,.55); color: var(--text); }
-    .btn.ghost{ background: rgba(15,36,56,.25); border-color: rgba(131,106,69,.22); color: var(--text); }
-    .btn.danger{ background: rgba(255,90,95,.10); border-color: rgba(255,90,95,.45); color: #ffb0b3; }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-start; }
-
-    .field{ display:flex; flex-direction:column; gap:6px; width: 100%; }
-    label{ color: var(--muted); font-size: 13.5px; font-weight: 650; }
-    input, select{
-      width: 100%;
-      padding: 13px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.35);
-      color: var(--text);
-      outline:none;
-      font-size: 17px;
-      font-weight: 650;
-    }
-    select{ cursor:pointer; }
-    input:focus, select:focus{ border-color: rgba(131,106,69,.55); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
-
-    .kpi{
-      display:flex; flex-direction:column; gap: 8px;
-      padding: 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.35);
-    }
-    .kpi .big{ font-size: 30px; font-weight: 950; letter-spacing:.2px; color: var(--gold2); }
-    .kpi .small{ color: var(--muted); font-size: 13.5px; line-height: 1.55; }
-
-    .divider{ height:1px; background: rgba(131,106,69,.16); margin: 12px 0; }
-
-    .barwrap{ display:grid; gap: 8px; }
-    .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(7,18,31,.25); }
-    .bar .lbl{ flex: 0 1 48%; min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13.5px; font-weight: 700; }
-    .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.10); overflow:hidden; }
-    .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.60), rgba(176,163,144,.22)); }
-    .bar .num{ width: 62px; text-align:right; color: var(--gold2); font-weight: 900; font-size: 13.5px; }
-
-    .footer-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
-
-    .pill{ display:inline-flex; align-items:center; gap: 8px; padding: 8px 11px; border-radius: 999px; background: rgba(131,106,69,.10); border: 1px solid rgba(131,106,69,.20); color: var(--muted); font-size: 13.5px; font-weight: 650; }
-    .dot{ width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(131,106,69,.12); }
-
-    .mini{
-      margin-top: 10px;
-      border-top: 1px solid rgba(131,106,69,.16);
-      padding-top: 10px;
-      color: var(--muted);
-      font-size: 13.5px;
-      line-height: 1.65;
-    }
-
-    .note{
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      border: 1px solid rgba(131,106,69,.18);
-      background: rgba(7,18,31,.25);
-      color: var(--muted);
-      font-size: 13.5px;
-      line-height: 1.6;
-    }
-
-    .danger-text{ color: #ffb0b3; }
-
-    .toast{
-      position: fixed;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
-      background: rgba(7,18,31,.88);
-      border: 1px solid rgba(131,106,69,.25);
-      box-shadow: var(--shadow);
-      padding: 12px 14px;
-      border-radius: 18px;
-      max-width: 92vw;
-      width: 620px;
-      display:none;
-      z-index: 30;
-    }
-    .toast.show{ display:block; animation: pop .12s ease-out; }
-    @keyframes pop{ from{ transform: translateX(-50%) translateY(6px); opacity:.0; } to{ transform: translateX(-50%) translateY(0); opacity:1; } }
-    .toast .t{ font-weight: 900; color: var(--text); font-size: 15.5px; }
-    .toast .d{ color: var(--muted); font-size: 13.5px; margin-top: 4px; line-height: 1.5; }
-
-    table{ width: 100%; border-collapse: collapse; overflow:hidden; border-radius: 18px; border: 1px solid rgba(131,106,69,.18); background: rgba(7,18,31,.25); }
-    th, td{ padding: 11px 11px; font-size: 13px; border-bottom: 1px solid rgba(131,106,69,.14); text-align:left; }
-    th{ color: var(--muted); font-weight: 800; }
-    tr:last-child td{ border-bottom:none; }
   </style>
 </head>
 <body>
   <header>
     <div class="wrap brand">
       <div class="brand-left">
-        <div class="mark">L</div>
-        <div style="min-width:0">
-          <h1>Laya shuttle bus</h1>
-          <p class="sub" id="statusLine">Loading…</p>
+        <img class="brand-logo" src="data:image/webp;base64,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" width="440" height="203" alt="Radisson Resort Layan Phuket">
+        <div class="brand-copy">
+          <h1>Shuttle Service</h1>
+          <p class="sub">ระบบจองรถรับส่ง</p>
         </div>
       </div>
       <nav class="nav" id="nav"></nav>
     </div>
   </header>
 
+  <div class="wrap status" role="status"><span class="dot" aria-hidden="true"></span><span id="statusLine">กำลังโหลด…</span></div>
   <main class="wrap" id="view"></main>
 
   <div class="toast" id="toast" role="status" aria-live="polite">
@@ -1700,6 +1622,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   function setStatusLine(state) {
     var el = document.getElementById('statusLine');
     if(!el) return;
+    el.parentElement?.setAttribute('data-live', String(state === 'live'));
     var mode = storage.getMode();
     var err = (storage.getInitError ? storage.getInitError() : null);
 
@@ -1726,7 +1649,6 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var ui = loadUi();
     var date = ui.date || todayKey();
     var dirKey = ui.dir;
-    var mode = storage.getMode();
     var monthKey = monthKeyFromDateStr(date);
 
     var legacy = parseHash().path === '/legacy';
@@ -1778,7 +1700,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         '<div class="meta">' +
           '<div class="time">' + escapeHtml(pickup) + '</div>' +
           '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + '</div>' +
-          (closed ? '<div style="color: rgba(245,240,230,.55)">• ปิดทำรายการ</div>' : '') +
+          (closed ? '<div class="closed-label">• ปิดทำรายการ</div>' : '') +
         '</div>' +
         '<button class="btn ' + btnKind + '" onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
       '</div>';
@@ -1793,7 +1715,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var right = '';
     right += '<section class="card">';
     right += '<div class="card-h">' +
-      '<div><h2>สถิติจาก Log</h2>' +
+      '<div><h2>สถิติการจอง</h2>' +
       '<p class="hint">' + escapeHtml(dirLabel) + (legacy ? ' · ตารางเดิม' : ' · ' + escapeHtml(sharedRoute ? ROUTES[selected.routeKey].label : selected.name)) +
       ' · เดือน <b>' + escapeHtml(monthKey) + '</b> (ยอดจองรวม)</p></div>' +
     '</div>';
@@ -1808,9 +1730,9 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     right += '<div class="barwrap">' + barsHtml + '</div>';
     right += '<div class="divider"></div>';
     right += '<div class="footer-actions">' +
-      '<button class="btn ghost" onclick="window.__exportDay()">Export วันนี้</button>' +
-      '<button class="btn ghost" onclick="window.__exportMonth()">Export เดือนนี้</button>' +
-      '<button class="btn ghost" onclick="window.__exportAll()">Export ทั้งหมด</button>' +
+      '<button class="btn ghost" onclick="window.__exportDay()">Excel วันนี้</button>' +
+      '<button class="btn ghost" onclick="window.__exportMonth()">Excel เดือนนี้</button>' +
+      '<button class="btn ghost" onclick="window.__exportAll()">Excel ทั้งหมด</button>' +
     '</div>';
     if(!legacy) {
       right += '<div style="height:10px"></div>' +
@@ -1840,9 +1762,8 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
             (legacy
               ? '<div><h2>รายการจองตามตารางเดิม</h2><p class="hint">เลือกวันที่และรอบเพื่อดูหรือยกเลิกรายการจองเดิม</p></div>'
               : '<div><h2>ตารางเวลาเดินรถ</h2><p class="hint">เลือก <b>ขาไป/ขากลับ</b> และสถานที่ เพื่อดูเฉพาะรอบของจุดนั้น</p></div>') +
-            '<div class="row">' +
+            '<div class="row schedule-controls">' +
               '<div class="field" style="width:190px;max-width:190px"><label for="datePick">วันที่เดินรถ</label><input id="datePick" type="date" value="'+escapeHtml(date)+'" min="'+escapeHtml(todayKey())+'" /></div>' +
-              '<span class="pill"><span class="dot"></span> ' + (mode==='firebase' ? 'Firebase' : 'Local') + '</span>' +
               '<button class="chip ' + (dirKey==='out'?'active':'') + '" onclick="window.__setDir(\'out\')">ขาไป</button>' +
               '<button class="chip ' + (dirKey==='back'?'active':'') + '" onclick="window.__setDir(\'back\')">ขากลับ</button>' +
             '</div>' +
@@ -1942,7 +1863,10 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var selected = route && route.stops.find(function(stop){ return stop.key === stopKey; });
     if(!selected && route && route.stops.length === 1) selected = route.stops[0];
     var boarding = selected ? calcTimes(dirKey, baseTime, selected.key) : null;
-    var heading = selected ? boarding.pickupTime + ' · ' + selected.name : roundLabel(baseTime);
+    var day = new Date(date + 'T00:00:00Z');
+    var dateLabel = Number.isNaN(day.getTime()) ? date : new Intl.DateTimeFormat('th-TH-u-ca-gregory', {
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'
+    }).format(day);
 
     var slot = await storage.getSlot(date, dir.key, baseTime);
     if(version !== viewVersion) return;
@@ -1954,26 +1878,28 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     }).join('');
 
     $('view').innerHTML =
-      '<section class="card">' +
+      '<section class="card booking">' +
         '<div class="card-h">' +
-          '<div><h2>' + escapeHtml(dir.label) + ' • วันที่ <span style="color:var(--gold2)">' + escapeHtml(date) + '</span> • รอบเวลา <span style="color:var(--gold2)">' + escapeHtml(heading) + '</span></h2>' +
-          '<p class="hint">' + (legacy ? 'ดูหรือยกเลิกรายการจองเดิม' : (selected ? 'กรอกเลขห้องและจำนวนผู้โดยสาร' : 'เลือก ' + escapeHtml(dir.selectLabel) + ' เพื่อดูเวลาขึ้นรถ')) + '</p></div>' +
+          '<div><h2>จองรถ' + escapeHtml(dir.label) + '</h2>' +
+          '<p class="hint">' + escapeHtml(dateLabel) + (selected ? '' : ' · ' + escapeHtml(roundLabel(baseTime))) + '</p></div>' +
           '<div class="row"><button class="btn ghost" onclick="window.__back()">ย้อนกลับ</button></div>' +
         '</div>' +
         '<div class="card-b" style="max-width: 860px;">' +
-          '<div class="row" style="gap:12px">' +
-            '<div class="field" style="flex:1 1 360px">' +
-              '<label for="place">' + escapeHtml(dir.selectLabel) + '</label>' +
-              (selected
-                ? '<input id="place" readonly value="' + escapeHtml(selected.name) + '" />'
-                : '<select id="place"><option value="">— โปรดเลือก —</option>' + options + '</select>') +
-            '</div>' +
-            '<div class="field" style="flex:1 1 260px">' +
-              '<label>' + (legacy ? 'เวลาถึงโดยประมาณ' : 'เวลาขึ้นรถ') + '</label>' +
-              '<input id="arrival" readonly value="—" />' +
-            '</div>' +
-          '</div>' +
-          '<div class="note" id="routeNote">เลือก ' + escapeHtml(dir.selectLabel) + ' เพื่อคำนวณเวลา</div>' +
+          (selected
+            ? '<div class="booking-summary"><div><strong>' + escapeHtml(selected.name) + '</strong>' +
+                '<span>ขึ้นรถ ' + escapeHtml(boarding.pickupTime) + '</span></div>' +
+                '<span id="bookingAvailability" class="booking-availability" aria-live="polite"></span></div>'
+            : '<div class="row">' +
+                '<div class="field" style="flex:1 1 280px">' +
+                  '<label for="place">' + escapeHtml(dir.selectLabel) + '</label>' +
+                  '<select id="place"><option value="">— โปรดเลือก —</option>' + options + '</select>' +
+                '</div>' +
+                '<div class="field" style="flex:1 1 200px">' +
+                  '<label for="arrival">' + (legacy ? 'เวลาถึงโดยประมาณ' : 'เวลาขึ้นรถ') + '</label>' +
+                  '<input id="arrival" readonly value="—" />' +
+                '</div>' +
+              '</div>' +
+              '<div class="note" id="routeNote">เลือก ' + escapeHtml(dir.selectLabel) + ' เพื่อคำนวณเวลา</div>') +
           '<div class="divider"></div>' +
           '<div class="row" style="gap:12px">' +
             '<div class="field" style="flex:1 1 260px">' +
@@ -1985,18 +1911,17 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
               '<input id="pax" type="number" min="1" step="1" inputmode="numeric" placeholder="เช่น 2" />' +
             '</div>' +
           '</div>' +
-          '<div style="height:12px"></div>' +
-          '<div class="row">' +
-            '<button id="btnBook" class="btn primary" onclick="window.__book()">จอง</button>' +
+          '<div class="row booking-actions">' +
+            '<button id="btnBook" class="btn primary" onclick="window.__book()">จองที่นั่ง</button>' +
             '<button class="btn danger" onclick="window.__cancel()">ยกเลิกการจอง</button>' +
             '<span class="pill"><span class="dot"></span> 1 ห้อง/1 รอบ จองได้ครั้งเดียว</span>' +
           '</div>' +
           '<div class="mini" id="mini"></div>' +
           '<div class="note" id="note"></div>' +
           '<div class="divider"></div>' +
-          '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
-            '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">รายการจองในรอบนี้</h2><p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาเดินทาง</p></div></div>' +
-            '<div class="card-b" id="bookingsTable"></div>' +
+          '<div class="card inset">' +
+            '<div class="card-h"><div><h2 style="font-size:15.5px">รายการจองในรอบนี้</h2><p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาเดินทาง</p></div></div>' +
+            '<div class="card-b table-scroll" id="bookingsTable"></div>' +
           '</div>' +
         '</div>' +
       '</section>';
@@ -2004,13 +1929,14 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var placeEl = $('place');
     var arrivalEl = $('arrival');
     var routeNoteEl = $('routeNote');
+    var availabilityEl = $('bookingAvailability');
     var roomEl = $('room');
     var paxEl = $('pax');
     var bookBtn = $('btnBook');
     var noteEl = $('note');
 
     function updateArrival() {
-      var t = boarding || calcTimes(dir.key, baseTime, placeEl.value);
+      var t = calcTimes(dir.key, baseTime, placeEl.value);
       if(!t) {
         arrivalEl.value = '—';
         routeNoteEl.textContent = 'เลือก ' + dir.selectLabel + ' เพื่อคำนวณเวลา';
@@ -2065,8 +1991,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
 
     function updateMini(slotData) {
       var sl = slotData;
-      var closedNow = isSlotPast(date, arrivalEl.value === '—' || !route ? baseTime : arrivalEl.value);
-      $('mini').innerHTML = '<b>คงเหลือ:</b> ที่นั่งว่าง <b class="' + (sl.available===0?'danger':'') + '">' + sl.available + '</b> / ' + sl.capacity + (closedNow ? ' • <span style="color: rgba(245,240,230,.55)"><b>ปิดทำรายการแล้ว</b></span>' : '') + '<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>';
+      var cutoff = boarding ? boarding.pickupTime : (route && arrivalEl.value !== '—' ? arrivalEl.value : baseTime);
+      var closedNow = isSlotPast(date, cutoff);
+      if(availabilityEl) {
+        availabilityEl.textContent = 'ว่าง ' + sl.available + ' / ' + sl.capacity;
+        availabilityEl.classList.toggle('danger', sl.available === 0);
+      }
+      $('mini').innerHTML = '<b>คงเหลือ:</b> ที่นั่งว่าง <b class="' + (sl.available===0?'danger':'') + '">' + sl.available + '</b> / ' + sl.capacity + (closedNow ? ' • <span class="closed-label"><b>ปิดทำรายการแล้ว</b></span>' : '') + '<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>';
     }
 
     function updateBookBtn(slotData) {
@@ -2183,7 +2114,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       }
     };
 
-    updateArrival();
+    if(!selected) updateArrival();
     showSlot(slot);
     stopWatching = storage.watchSlots(date, dir.key, [baseTime], function(time, next){
       if(version !== viewVersion) return;
@@ -2257,7 +2188,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
           '<div class="row"><button class="btn ghost" onclick="window.__goSchedule()">กลับหน้าตาราง</button></div>' +
         '</div>' +
         '<div class="card-b">' +
-          '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14); margin-bottom: 12px;">' +
+          '<div class="card inset" style="margin-bottom:12px">' +
             '<div class="card-b">' +
               '<div class="row" style="align-items:flex-end; justify-content:space-between">' +
                 '<div class="row" style="flex:1;">' +
@@ -2266,29 +2197,29 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
                   '<div class="field" style="max-width:230px"><label for="expMonth">Export ตามเดือน</label><input id="expMonth" type="month" /></div>' +
                   '<button class="btn" onclick="window.__exportMonthFromInput()">Export เดือน</button>' +
                 '</div>' +
-                '<div class="row"><button class="btn" onclick="window.__exportAll()">Export ทั้งหมด</button></div>' +
+                '<div class="row"><button class="btn" onclick="window.__exportAll()">Excel ทั้งหมด</button></div>' +
               '</div>' +
               '<div class="mini">หมายเหตุ: ไฟล์ export จะมี EXCOM Summary, Phase Summary, Building Summary, Daily Summary, Round Summary และ Detail Log โดยคิด % จาก Net Guests Using Service ในช่วงที่เลือก</div>' +
             '</div>' +
           '</div>' +
 
           '<div class="grid">' +
-            '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
-              '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">สถิติ • ขาไป</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(outTop.time||'—')+'</b> ('+outTop.value+' คน)</p></div></div>' +
+            '<div class="card inset">' +
+              '<div class="card-h"><div><h2 style="font-size:15.5px">สถิติ • ขาไป</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(outTop.time||'—')+'</b> ('+outTop.value+' คน)</p></div></div>' +
               '<div class="card-b">'+ buildBars(stats.out, outTimes) +'</div>' +
             '</div>' +
-            '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
-              '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">สถิติ • ขากลับ</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(backTop.time||'—')+'</b> ('+backTop.value+' คน)</p></div></div>' +
+            '<div class="card inset">' +
+              '<div class="card-h"><div><h2 style="font-size:15.5px">สถิติ • ขากลับ</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(backTop.time||'—')+'</b> ('+backTop.value+' คน)</p></div></div>' +
               '<div class="card-b">'+ buildBars(stats.back, backTimes) +'</div>' +
             '</div>' +
           '</div>' +
 
           '<div class="divider"></div>' +
 
-          '<table>' +
+          '<div class="table-scroll"><table>' +
             '<thead><tr><th>เวลา</th><th>Action</th><th>ขา</th><th>รอบ</th><th>เส้นทาง</th><th>เวลาเดินทาง</th><th>ห้อง</th><th>คน</th></tr></thead>' +
             '<tbody>' + (rows || '<tr><td colspan="8" class="mini">ยังไม่มี Log</td></tr>') + '</tbody>' +
-          '</table>' +
+          '</table></div>' +
         '</div>' +
       '</section>';
 
