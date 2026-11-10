@@ -186,7 +186,7 @@
 
     .barwrap{ display:grid; gap: 8px; }
     .bar{ display:flex; align-items:center; gap: 10px; padding: 10px; border-radius: 16px; border: 1px solid rgba(131,106,69,.16); background: rgba(7,18,31,.25); }
-    .bar .lbl{ width: 66px; color: var(--muted); font-size: 13.5px; font-weight: 700; }
+    .bar .lbl{ flex: 0 1 48%; min-width: 0; overflow-wrap: anywhere; color: var(--muted); font-size: 13.5px; font-weight: 700; }
     .bar .track{ flex: 1; height: 12px; border-radius: 999px; background: rgba(131,106,69,.10); overflow:hidden; }
     .bar .fill{ height: 100%; width: 0%; background: linear-gradient(90deg, rgba(131,106,69,.60), rgba(176,163,144,.22)); }
     .bar .num{ width: 62px; text-align:right; color: var(--gold2); font-weight: 900; font-size: 13.5px; }
@@ -293,7 +293,7 @@
   // ============================
   // Schedule
   // ============================
-  var DIRS = {
+  var LEGACY_DIRS = {
     out: {
       key: 'out',
       label: 'ขาไป',
@@ -329,6 +329,49 @@
       ]
     }
   };
+
+  // Each route and direction has its own seat pool. The Boat Avenue
+  // and Le Phang Beach stops share seats on the same vehicle.
+  var ROUTES = {
+    banana: {
+      label: 'Banana Beach',
+      stops: [{ key: 'BANANA', name: 'Banana Beach', returnOffset: 0 }],
+      out: ['11:00', '14:00', '18:00'],
+      back: ['14:30', '18:30']
+    },
+    layan: {
+      label: 'Layan Beach',
+      stops: [{ key: 'LAYAN_BEACH', name: 'Layan Beach', returnOffset: 0 }],
+      out: ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+      back: ['11:10', '12:10', '13:10', '14:10', '15:10', '16:10', '17:10', '18:10']
+    },
+    boat: {
+      label: 'Boat Avenue / Le Phang Beach',
+      stops: [
+        { key: 'BOAT', name: 'Boat Avenue', returnOffset: 0 },
+        { key: 'LEPHANG', name: 'Le Phang Beach', returnOffset: 15 }
+      ],
+      out: ['12:00', '15:00', '17:00'],
+      back: ['12:30', '15:30', '17:30']
+    }
+  };
+  var DIRS = {};
+  Object.keys(LEGACY_DIRS).forEach(function(dirKey){
+    var roundKeys = [];
+    Object.keys(ROUTES).forEach(function(routeKey){
+      ROUTES[routeKey][dirKey].forEach(function(time){
+        roundKeys.push(time + '_' + routeKey);
+      });
+    });
+    DIRS[dirKey] = { baseTimes: roundKeys.sort() };
+  });
+
+  function roundTime(roundKey) { return roundKey.slice(0, 5); }
+  function roundRoute(roundKey) { return ROUTES[roundKey.slice(6)]; }
+  function roundLabel(roundKey) {
+    var route = roundRoute(roundKey);
+    return roundTime(roundKey) + (route ? ' · ' + route.label : ' · รอบเดิม');
+  }
 
   // ============================
   // Utils
@@ -478,7 +521,21 @@
   }
 
   function calcTimes(dirKey, baseTime, placeKey) {
-    var dir = DIRS[dirKey];
+    var route = roundRoute(baseTime);
+    if(route) {
+      var stop = route.stops.find(function(item){ return item.key === placeKey; });
+      if(!stop) return null;
+      var isOut = dirKey === 'out';
+      var time = roundTime(baseTime);
+      return {
+        pickup: isOut ? 'Hotel' : stop.name,
+        destination: isOut ? stop.name : 'Hotel',
+        pickupTime: isOut ? time : addMin(time, stop.returnOffset),
+        arriveTime: ''
+      };
+    }
+
+    var dir = LEGACY_DIRS[dirKey];
     if(!dir || !placeKey) return null;
 
     if(dirKey === 'out') {
@@ -509,7 +566,7 @@
   // Local fallback store
   // ============================
   function buildDefaultLocalSlot(dateStr, dirKey, t) {
-    return { date: dateStr, dir: dirKey, time: t, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+    return { date: dateStr, dir: dirKey, time: roundTime(t), capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
   }
 
   function loadLocalState() {
@@ -611,12 +668,7 @@
 
       if(mode !== 'firebase') {
         var st = loadLocalState();
-        var slot = st.slots[id];
-        if(!slot) {
-          slot = { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
-          st.slots[id] = slot;
-          saveLocalState(st);
-        }
+        var slot = st.slots[id] || buildDefaultLocalSlot(dateStr, dirKey, timeStr);
         return JSON.parse(JSON.stringify(slot));
       }
 
@@ -625,10 +677,7 @@
         var ref = fs.doc(fb.db, COL_SLOTS, id);
         var snap = await fs.getDoc(ref);
         if(!snap.exists()) {
-          var def = { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {}, updatedAt: fs.serverTimestamp() };
-          await fs.setDoc(ref, def, { merge: true });
-          def.updatedAt = null;
-          return def;
+          return buildDefaultLocalSlot(dateStr, dirKey, timeStr);
         }
         var data = Object.assign({}, snap.data());
         data = normalizeSlotData(data);
@@ -644,18 +693,20 @@
       }
     }
 
-    async function listSlots(dateStr, dirKey) {
-      var times = DIRS[dirKey].baseTimes.slice();
-      var out = [];
+    async function listSlots(dateStr, dirKey, legacy) {
+      var times = (legacy ? LEGACY_DIRS : DIRS)[dirKey].baseTimes;
+      var slots = [];
       for(var i=0;i<times.length;i++) {
-        var t = times[i];
-        var s = await getSlot(dateStr, dirKey, t);
-        out.push({ time: t, capacity: s.capacity || CAPACITY_PER_TRIP, available: (typeof s.available==='number'? s.available : CAPACITY_PER_TRIP) });
+        var time = times[i];
+        var slot = await getSlot(dateStr, dirKey, time);
+        if(legacy && !Object.keys(slot.bookings || {}).length) continue;
+        slots.push({ time: time, capacity: slot.capacity, available: slot.available });
       }
-      return out;
+      return slots;
     }
 
     async function book(dateStr, dirKey, timeStr, roomRaw, pax, placeKey, timesInfo) {
+      if(DIRS[dirKey].baseTimes.indexOf(timeStr) < 0) return { ok:false, msg:'รอบเดิมเปิดให้ดูหรือยกเลิกเท่านั้น' };
       var room = String(roomRaw || '').trim();
       if(!room) return { ok:false, msg:'กรุณาใส่เลขห้อง' };
       var roomK = safeKey(room);
@@ -663,7 +714,7 @@
       if(mode !== 'firebase') {
         var st = loadLocalState();
         var id = slotDocId(dateStr, dirKey, timeStr);
-        var slot = st.slots[id] || { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+        var slot = st.slots[id] || buildDefaultLocalSlot(dateStr, dirKey, timeStr);
         if(slot.bookings[roomK] && slot.bookings[roomK].pax > 0) return { ok:false, msg:'ห้องนี้จองแล้ว (กันการกดซ้ำ)' };
         if(pax > slot.available) return { ok:false, msg:'ที่นั่งไม่พอ' };
         slot.bookings[roomK] = {
@@ -676,7 +727,7 @@
         st.slots[id] = slot;
         saveLocalState(st);
         addLocalLog({
-          action:'BOOK', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr,
+          action:'BOOK', roundKey: timeStr, pax:pax, room:room, time:roundTime(timeStr), dir:dirKey, date:dateStr,
           slotTsMs: slotTsMs(dateStr, timeStr), placeKey: placeKey,
           pickup: timesInfo.pickup, destination: timesInfo.destination,
           pickupTime: timesInfo.pickupTime, arriveTime: timesInfo.arriveTime,
@@ -699,7 +750,7 @@
           var snap = await tx.get(slotRef);
           var data;
           if(!snap.exists()) {
-            data = { date: dateStr, dir: dirKey, time: timeStr, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {} };
+            data = buildDefaultLocalSlot(dateStr, dirKey, timeStr);
             tx.set(slotRef, Object.assign({}, data, { updatedAt: fs.serverTimestamp() }), { merge: true });
           } else {
             data = snap.data();
@@ -732,7 +783,7 @@
           statUpd[dirKey][timeKey(timeStr)] = fs.increment(pax);
           tx.set(statsRef, statUpd, { merge: true });
 tx.set(logRef, {
-            action: 'BOOK', pax: pax, room: room, time: timeStr, dir: dirKey,
+            action: 'BOOK', roundKey: timeStr, pax: pax, room: room, time: roundTime(timeStr), dir: dirKey,
             date: dateStr, month: monthKey,
             slotTsMs: slotTsMs(dateStr, timeStr),
             placeKey: placeKey,
@@ -776,7 +827,7 @@ tx.set(logRef, {
         slot.available = Math.min(slot.capacity || CAPACITY_PER_TRIP, (slot.available || 0) + pax);
         saveLocalState(st);
         addLocalLog({
-          action:'CANCEL', pax:pax, room:room, time:timeStr, dir:dirKey, date:dateStr,
+          action:'CANCEL', roundKey: timeStr, pax:pax, room:room, time:roundTime(timeStr), dir:dirKey, date:dateStr,
           slotTsMs: slotTsMs(dateStr, timeStr),
           placeKey: existingInfo.placeKey || '',
           pickup: existingInfo.pickup || '', destination: existingInfo.destination || '',
@@ -881,10 +932,10 @@ tx.set(logRef, {
           tx.set(statsRef, statUpd2, { merge:true });
 
           tx.set(logRef, {
-            action: 'CANCEL',
+            action: 'CANCEL', roundKey: timeStr,
             pax: pax,
             room: roomNorm,
-            time: timeStr,
+            time: roundTime(timeStr),
             dir: dirKey,
             date: dateStr,
             month: monthKey,
@@ -938,12 +989,12 @@ tx.set(logRef, {
         } };
 
         Object.keys(DIRS).forEach(function(dk){
-          DIRS[dk].baseTimes.forEach(function(t){ out[dk][timeKey(t)] = 0; });
+          DIRS[dk].baseTimes.concat(LEGACY_DIRS[dk].baseTimes).forEach(function(t){ out[dk][timeKey(t)] = 0; });
         });
 
         logsMonth.forEach(function(e){
           if(!e || e.action !== 'BOOK') return;
-          if(out[e.dir] && out[e.dir][timeKey(e.time)] !== undefined) out[e.dir][timeKey(e.time)] += (e.pax||0);
+          if(out[e.dir] && out[e.dir][timeKey(e.roundKey || e.time)] !== undefined) out[e.dir][timeKey(e.roundKey || e.time)] += (e.pax||0);
         });
 
         return out;
@@ -1008,7 +1059,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
 
         function pushUnique(arr, item) {
           if(!item) return;
-          var key = String(item.action||'') + '|' + String(item.date||'') + '|' + String(item.dir||'') + '|' + String(item.time||'') + '|' + String(item.room||'') + '|' + String(item.tsMs||'');
+          var key = String(item.action||'') + '|' + String(item.date||'') + '|' + String(item.dir||'') + '|' + String(item.roundKey || item.time || '') + '|' + String(item.room||'') + '|' + String(item.tsMs||'');
           if(!pushUnique._seen) pushUnique._seen = {};
           if(pushUnique._seen[key]) return;
           pushUnique._seen[key] = true;
@@ -1113,15 +1164,17 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       try {
         var fs = fb.fs;
         var db = fb.db;
-        var promises = [];
+        var batch = fs.writeBatch(db);
         Object.keys(DIRS).forEach(function(dirKey){
           DIRS[dirKey].baseTimes.forEach(function(t){
             var id = slotDocId(dateStr, dirKey, t);
             var ref = fs.doc(db, COL_SLOTS, id);
-            promises.push(fs.setDoc(ref, { date: dateStr, dir: dirKey, time: t, capacity: CAPACITY_PER_TRIP, available: CAPACITY_PER_TRIP, bookings: {}, updatedAt: fs.serverTimestamp() }, { merge:true }));
+            batch.set(ref, Object.assign(buildDefaultLocalSlot(dateStr, dirKey, t), {
+              updatedAt: fs.serverTimestamp()
+            }), { merge:true });
           });
         });
-        await Promise.all(promises);
+        await batch.commit();
         return true;
       } catch(e) {
         console.error(e);
@@ -1263,7 +1316,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var phase = phaseFromBuilding(building);
       var date = String(e.date || '');
       var dirLabel = e.dir === 'out' ? 'ขาไป' : (e.dir === 'back' ? 'ขากลับ' : (e.dir || 'Unknown'));
-      var time = String(e.time || '');
+      var time = e.roundKey && roundRoute(e.roundKey) ? roundLabel(e.roundKey) : String(e.time || '');
       var phaseRec = pushAgg(out.phaseMap, phase, { phase: phase, buildings: {}, gross: 0, cancel: 0, net: 0, entries: 0 });
       var buildingRec = pushAgg(out.buildingMap, building, { building: building, phase: phase, gross: 0, cancel: 0, net: 0, entries: 0 });
       var dateRec = pushAgg(out.dateMap, date || 'Unknown', {
@@ -1652,21 +1705,24 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var mode = storage.getMode();
     var monthKey = monthKeyFromDateStr(date);
 
-    var slots = await storage.listSlots(date, dirKey);
+    var legacy = parseHash().path === '/legacy';
+    var slots = await storage.listSlots(date, dirKey, legacy);
+    mode = storage.getMode();
+    setStatusLine();
 
     // Stats (monthly, based on BOOK total pax)
     var statsMonth = await storage.getStatsMonth(monthKey);
     var meta = (statsMonth && statsMonth.meta) ? statsMonth.meta : {};
     var perObj = (statsMonth && statsMonth[dirKey]) ? statsMonth[dirKey] : {};
 
-    var baseTimes = DIRS[dirKey].baseTimes.slice();
+    var baseTimes = (legacy ? LEGACY_DIRS : DIRS)[dirKey].baseTimes;
     var topTime = '—';
     var topValue = 0;
     var vals = [];
     baseTimes.forEach(function(t){
       var v = Number(perObj[timeKey(t)] || 0);
       vals.push(v);
-      if(v > topValue) { topValue = v; topTime = t; }
+      if(v > topValue) { topValue = v; topTime = roundLabel(t); }
     });
     var maxVal = Math.max.apply(null, vals.concat([0]));
 
@@ -1674,7 +1730,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var v = Number(perObj[timeKey(t)] || 0);
       var w = maxVal ? Math.round((v/maxVal)*100) : 0;
       return '<div class="bar">' +
-        '<div class="lbl">' + escapeHtml(t) + '</div>' +
+        '<div class="lbl">' + escapeHtml(roundLabel(t)) + '</div>' +
         '<div class="track"><div class="fill" style="width:' + w + '%"></div></div>' +
         '<div class="num">' + v + '</div>' +
       '</div>';
@@ -1684,12 +1740,14 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var closed = isSlotPast(date, s.time);
       var isFull = (s.available === 0);
       // ✅ Past time: show grey style only (still clickable)
-      var btnLabel = isFull ? 'ดู' : 'เลือก';
+      var btnLabel = (isFull || legacy) ? 'ดู' : 'เลือก';
       var btnKind = (isFull || closed) ? 'closed' : 'pick';
       var availClass = isFull ? 'danger' : '';
       return '<div class="slot">' +
         '<div class="meta">' +
-          '<div class="time">' + escapeHtml(s.time) + '</div>' +
+          '<div class="time">' + escapeHtml(roundTime(s.time)) + '</div>' +
+          '<div class="seat">' + escapeHtml(roundRoute(s.time) ? roundRoute(s.time).label : 'รอบเดิม') + '</div>' +
+          (dirKey === 'back' && s.time.endsWith('_boat') ? '<div class="seat">รับที่ Le Phang Beach ' + addMin(roundTime(s.time), 15) + '</div>' : '') +
           '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + '</div>' +
           (closed ? '<div style="color: rgba(245,240,230,.55)">• ปิดทำรายการ</div>' : '') +
         '</div>' +
@@ -1724,17 +1782,21 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       '<button class="btn ghost" onclick="window.__exportMonth()">Export เดือนนี้</button>' +
       '<button class="btn ghost" onclick="window.__exportAll()">Export ทั้งหมด</button>' +
     '</div>';
-    right += '<div style="height:10px"></div>';
-    right += '<div class="footer-actions">' +
-      '<button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันนี้)</button>' +
-    '</div>';
+    if(!legacy) {
+      right += '<div style="height:10px"></div>' +
+        '<div class="footer-actions">' +
+          '<button class="btn danger" onclick="window.__resetSeats()">รีเซ็ตที่นั่ง (วันที่เลือก)</button>' +
+        '</div>';
+    }
     right += '</div></section>';
 
     $('view').innerHTML =
       '<div class="grid">' +
         '<section class="card">' +
           '<div class="card-h">' +
-            '<div><h2>ตารางเวลาเดินรถ</h2><p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วกด “เลือก” เพื่อไปหน้าเลือกปลายทาง/จุดรับ</p></div>' +
+            (legacy
+              ? '<div><h2>รายการจองตามตารางเดิม</h2><p class="hint">เลือกวันที่และรอบเพื่อดูหรือยกเลิกรายการจองเดิม</p></div>'
+              : '<div><h2>ตารางเวลาเดินรถ</h2><p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วเลือกรอบตามเส้นทาง</p></div>') +
             '<div class="row">' +
               '<div class="field" style="width:190px;max-width:190px"><label for="datePick">วันที่เดินรถ</label><input id="datePick" type="date" value="'+escapeHtml(date)+'" min="'+escapeHtml(todayKey())+'" /></div>' +
               '<span class="pill"><span class="dot"></span> ' + (mode==='firebase' ? 'Firebase' : 'Local') + '</span>' +
@@ -1742,8 +1804,9 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
               '<button class="chip ' + (dirKey==='back'?'active':'') + '" onclick="window.__setDir(\'back\')">ขากลับ</button>' +
             '</div>' +
           '</div>' +
-          '<div class="card-b"><div class="slots">' + cardsHtml + '</div>' +
-            '<div class="mini"><b>Daily reset:</b> ที่นั่งรีเซ็ตทุกวัน • <b>Past time:</b> รอบที่ปิดแล้วแสดงเป็นสีเทา (ยังจอง/ยกเลิกได้)</div>' +
+          '<div class="card-b"><div class="slots">' + (cardsHtml || '<div class="mini">ไม่มีรายการจองเดิมในวันที่เลือก</div>') + '</div>' +
+            '<div class="mini"><a class="chip" href="' + (legacy ? '#/' : '#/legacy') + '">' +
+              (legacy ? 'กลับตารางใหม่' : 'ดูรายการจองจากตารางเดิม') + '</a></div>' +
           '</div>' +
         '</section>' +
         right +
@@ -1779,7 +1842,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     window.__exportAll = function(){ doExport('all','').catch(console.error); };
 
     window.__resetSeats = function(){
-      if(!confirm('ต้องการรีเซ็ตที่นั่งของวันนี้ (ไม่ลบ Log) ใช่ไหม?')) return;
+      if(!confirm('ต้องการรีเซ็ตที่นั่งของตารางใหม่ วันที่ ' + date + ' (ไม่ลบ Log) ใช่ไหม?')) return;
       storage.resetDay(date).then(function(ok){
         if(ok) toast('รีเซ็ตที่นั่งแล้ว', 'วันที่ ' + date);
         else toast('รีเซ็ตไม่สำเร็จ', 'ตรวจสอบ Firebase/Quota');
@@ -1794,7 +1857,14 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     setStatusLine();
     var ui = loadUi();
     var date = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : (ui.date || todayKey());
-    var dir = (dirKey==='back') ? DIRS.back : DIRS.out;
+    var legacyDir = LEGACY_DIRS[dirKey];
+    var legacy = legacyDir.baseTimes.indexOf(baseTime) >= 0;
+    if(!legacy && DIRS[dirKey].baseTimes.indexOf(baseTime) < 0) {
+      setHash('/');
+      return;
+    }
+    var route = roundRoute(baseTime);
+    var dir = Object.assign({}, legacyDir, { selectable: legacy ? legacyDir.selectable : route.stops });
     var closed = isSlotPast(date, baseTime);
 
     var slot = await storage.getSlot(date, dir.key, baseTime);
@@ -1806,8 +1876,8 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     $('view').innerHTML =
       '<section class="card">' +
         '<div class="card-h">' +
-          '<div><h2>' + escapeHtml(dir.label) + ' • วันที่ <span style="color:var(--gold2)">' + escapeHtml(date) + '</span> • รอบเวลา <span style="color:var(--gold2)">' + escapeHtml(baseTime) + '</span></h2>' +
-          '<p class="hint">เลือก ' + escapeHtml(dir.selectLabel) + ' ก่อน แล้วระบบจะแสดงเวลาถึง</p></div>' +
+          '<div><h2>' + escapeHtml(dir.label) + ' • วันที่ <span style="color:var(--gold2)">' + escapeHtml(date) + '</span> • รอบเวลา <span style="color:var(--gold2)">' + escapeHtml(roundLabel(baseTime)) + '</span></h2>' +
+          '<p class="hint">' + (legacy ? 'ดูหรือยกเลิกรายการจองเดิม' : 'เลือก ' + escapeHtml(dir.selectLabel) + ' เพื่อดูเวลาขึ้นรถ') + '</p></div>' +
           '<div class="row"><button class="btn ghost" onclick="window.__back()">ย้อนกลับ</button></div>' +
         '</div>' +
         '<div class="card-b" style="max-width: 860px;">' +
@@ -1817,7 +1887,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
               '<select id="place"><option value="">— โปรดเลือก —</option>' + options + '</select>' +
             '</div>' +
             '<div class="field" style="flex:1 1 260px">' +
-              '<label>เวลาถึงโดยประมาณ</label>' +
+              '<label>' + (legacy ? 'เวลาถึงโดยประมาณ' : 'เวลาขึ้นรถ') + '</label>' +
               '<input id="arrival" readonly value="—" />' +
             '</div>' +
           '</div>' +
@@ -1843,7 +1913,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
           '<div class="note" id="note"></div>' +
           '<div class="divider"></div>' +
           '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
-            '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">รายการจองในรอบนี้</h2><p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาถึง</p></div></div>' +
+            '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">รายการจองในรอบนี้</h2><p class="hint">แสดงเลขห้อง/จำนวนคน/เส้นทาง/เวลาเดินทาง</p></div></div>' +
             '<div class="card-b" id="bookingsTable"></div>' +
           '</div>' +
         '</div>' +
@@ -1852,6 +1922,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var placeEl = $('place');
     var arrivalEl = $('arrival');
     var routeNoteEl = $('routeNote');
+    if(route && route.stops.length === 1) placeEl.value = route.stops[0].key;
     var roomEl = $('room');
     var paxEl = $('pax');
     var bookBtn = $('btnBook');
@@ -1864,7 +1935,10 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         routeNoteEl.textContent = 'เลือก ' + dir.selectLabel + ' เพื่อคำนวณเวลา';
         return;
       }
-      if(dir.key === 'out') {
+      if(route) {
+        arrivalEl.value = t.pickupTime;
+        routeNoteEl.textContent = t.pickup + ' → ' + t.destination + ' • ขึ้นรถ ' + t.pickupTime;
+      } else if(dir.key === 'out') {
         arrivalEl.value = 'ถึง ' + t.destination + ' ' + t.arriveTime;
         routeNoteEl.innerHTML = 'ออกจาก <b>' + escapeHtml(t.pickup) + '</b> เวลา <b>' + escapeHtml(t.pickupTime) + '</b> • ถึง <b>' + escapeHtml(t.destination) + '</b> เวลา <b>' + escapeHtml(t.arriveTime) + '</b>';
       } else {
@@ -1901,11 +1975,11 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         var room = obj.room || '';
         var pax = (obj.pax !== undefined && obj.pax !== null) ? obj.pax : '';
         var line = (obj.pickup && obj.destination) ? (obj.pickup + ' → ' + obj.destination) : '';
-        var arrive = obj.arriveTime ? ('ถึง ' + obj.arriveTime) : '';
+        var arrive = obj.arriveTime ? ('ถึง ' + obj.arriveTime) : (obj.pickupTime ? 'ขึ้นรถ ' + obj.pickupTime : '');
         return '<tr><td>' + escapeHtml(room) + '</td><td><b>' + escapeHtml(pax) + '</b></td><td>' + escapeHtml(line) + '</td><td>' + escapeHtml(arrive) + '</td></tr>';
       }).join('');
 
-      wrap.innerHTML = '<table><thead><tr><th>เลขห้อง</th><th>จำนวนคน</th><th>เส้นทาง</th><th>เวลาถึง</th></tr></thead><tbody>' + rows + '</tbody></table>';
+      wrap.innerHTML = '<table><thead><tr><th>เลขห้อง</th><th>จำนวนคน</th><th>เส้นทาง</th><th>เวลาเดินทาง</th></tr></thead><tbody>' + rows + '</tbody></table>';
     }
 
     function updateMini(slotData) {
@@ -1915,6 +1989,11 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     }
 
     function updateBookBtn(slotData) {
+      if(legacy) {
+        bookBtn.disabled = true;
+        noteEl.textContent = 'รอบเดิมเปิดให้ดูหรือยกเลิกเท่านั้น';
+        return;
+      }
       var isFull = (slotData && typeof slotData.available === 'number' && slotData.available <= 0);
       var room = String(roomEl.value||'').trim();
 
@@ -1962,7 +2041,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     placeEl.addEventListener('change', function(){ updateArrival(); });
     roomEl.addEventListener('input', function(){ refresh().catch(console.error); });
 
-    window.__back = function(){ setHash('/'); };
+    window.__back = function(){ setHash(legacy ? '/legacy' : '/'); };
 
     window.__book = async function(){
       var placeKey = String(placeEl.value||'').trim();
@@ -1977,7 +2056,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       bookBtn.disabled = true;
       var res = await storage.book(date, dir.key, baseTime, room, pax, placeKey, t);
       if(!res.ok) { toast('จองไม่สำเร็จ', res.msg||''); await refresh(); return; }
-      toast('จองสำเร็จ', dir.label + ' • ห้อง ' + room + ' • ' + pax + ' คน • ถึง ' + t.arriveTime);
+      toast('จองสำเร็จ', dir.label + ' • ห้อง ' + room + ' • ' + pax + ' คน • ขึ้นรถ ' + t.pickupTime);
       await refresh();
     };
 
@@ -2007,10 +2086,12 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       return (stats[dirKey] && typeof stats[dirKey][k] === 'number') ? stats[dirKey][k] : 0;
     }
 
+    var outTimes = DIRS.out.baseTimes.concat(LEGACY_DIRS.out.baseTimes.filter(function(t){ return val('out', t) > 0; }));
+    var backTimes = DIRS.back.baseTimes.concat(LEGACY_DIRS.back.baseTimes.filter(function(t){ return val('back', t) > 0; }));
     var outTop = { time:null, value:0 };
-    DIRS.out.baseTimes.forEach(function(t){ var v = val('out',t); if(v>outTop.value) outTop={time:t,value:v}; });
+    outTimes.forEach(function(t){ var v = val('out',t); if(v>outTop.value) outTop={time:roundLabel(t),value:v}; });
     var backTop = { time:null, value:0 };
-    DIRS.back.baseTimes.forEach(function(t){ var v = val('back',t); if(v>backTop.value) backTop={time:t,value:v}; });
+    backTimes.forEach(function(t){ var v = val('back',t); if(v>backTop.value) backTop={time:roundLabel(t),value:v}; });
 
     var recent = await storage.queryLogs({ mode:'all', limit: 250 });
 
@@ -2022,7 +2103,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         var v = map[timeKey(t)] || 0;
         var w = maxVal ? Math.round((v/maxVal)*100) : 0;
         return '<div class="bar">' +
-          '<div class="lbl">'+escapeHtml(t)+'</div>' +
+          '<div class="lbl">'+escapeHtml(roundLabel(t))+'</div>' +
           '<div class="track"><div class="fill" style="width:'+w+'%"></div></div>' +
           '<div class="num">'+v+'</div>' +
         '</div>';
@@ -2040,9 +2121,9 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         '<td>'+escapeHtml(ts)+'</td>'+
         '<td>'+action+'</td>'+
         '<td>'+escapeHtml(dir)+'</td>'+
-        '<td>'+escapeHtml(e.time||'')+'</td>'+
+        '<td>'+escapeHtml(e.roundKey && roundRoute(e.roundKey) ? roundLabel(e.roundKey) : (e.time||''))+'</td>'+
         '<td>'+escapeHtml(route)+'</td>'+
-        '<td>'+escapeHtml(e.arriveTime||'')+'</td>'+
+        '<td>'+escapeHtml(e.arriveTime || (e.pickupTime ? 'ขึ้นรถ ' + e.pickupTime : ''))+'</td>'+
         '<td>'+escapeHtml(e.room||'')+'</td>'+
         '<td><b>'+escapeHtml((typeof e.pax==='number')?e.pax:(e.pax||''))+'</b></td>'+
       '</tr>';
@@ -2073,18 +2154,18 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
           '<div class="grid">' +
             '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
               '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">สถิติ • ขาไป</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(outTop.time||'—')+'</b> ('+outTop.value+' คน)</p></div></div>' +
-              '<div class="card-b">'+ buildBars(stats.out, DIRS.out.baseTimes) +'</div>' +
+              '<div class="card-b">'+ buildBars(stats.out, outTimes) +'</div>' +
             '</div>' +
             '<div class="card" style="background: rgba(7,18,31,.25); border-color: rgba(131,106,69,.14);">' +
               '<div class="card-h" style="border-bottom-color: rgba(131,106,69,.10)"><div><h2 style="font-size:15.5px">สถิติ • ขากลับ</h2><p class="hint">เวลาที่จองเยอะสุด: <b>'+(backTop.time||'—')+'</b> ('+backTop.value+' คน)</p></div></div>' +
-              '<div class="card-b">'+ buildBars(stats.back, DIRS.back.baseTimes) +'</div>' +
+              '<div class="card-b">'+ buildBars(stats.back, backTimes) +'</div>' +
             '</div>' +
           '</div>' +
 
           '<div class="divider"></div>' +
 
           '<table>' +
-            '<thead><tr><th>เวลา</th><th>Action</th><th>ขา</th><th>รอบ</th><th>เส้นทาง</th><th>ถึง</th><th>ห้อง</th><th>คน</th></tr></thead>' +
+            '<thead><tr><th>เวลา</th><th>Action</th><th>ขา</th><th>รอบ</th><th>เส้นทาง</th><th>เวลาเดินทาง</th><th>ห้อง</th><th>คน</th></tr></thead>' +
             '<tbody>' + (rows || '<tr><td colspan="8" class="mini">ยังไม่มี Log</td></tr>') + '</tbody>' +
           '</table>' +
         '</div>' +
