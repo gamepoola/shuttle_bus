@@ -638,13 +638,6 @@
       }
     }
 
-    function isQuotaError(e) {
-      var msg = (e && e.message) ? String(e.message) : '';
-      var code = (e && e.code) ? String(e.code) : '';
-      return code === 'resource-exhausted' || msg.includes('Quota') || msg.includes('resource-exhausted') || msg.includes('429');
-    }
-
-
     function normalizeSlotData(data) {
       data = data || {};
       // ensure bookings is a plain object
@@ -672,37 +665,62 @@
         return JSON.parse(JSON.stringify(slot));
       }
 
-      try {
-        var fs = fb.fs;
-        var ref = fs.doc(fb.db, COL_SLOTS, id);
-        var snap = await fs.getDoc(ref);
-        if(!snap.exists()) {
-          return buildDefaultLocalSlot(dateStr, dirKey, timeStr);
-        }
-        var data = Object.assign({}, snap.data());
-        data = normalizeSlotData(data);
-        return data;
-      } catch(e) {
-        console.error(e);
-        if(isQuotaError(e)) {
-          mode = 'local';
-          toast('Quota Firebase เต็ม', 'สลับเป็น Local ชั่วคราว');
-          return getSlot(dateStr, dirKey, timeStr);
-        }
-        throw e;
+      var fs = fb.fs;
+      var ref = fs.doc(fb.db, COL_SLOTS, id);
+      var snap = await fs.getDoc(ref);
+      return slotFromSnapshot(snap, dateStr, dirKey, timeStr);
+    }
+
+    function slotFromSnapshot(snap, dateStr, dirKey, timeStr) {
+      return snap.exists()
+        ? normalizeSlotData(snap.data())
+        : buildDefaultLocalSlot(dateStr, dirKey, timeStr);
+    }
+
+    function watchSlots(dateStr, dirKey, times, onSlot, onStatus) {
+      if(mode !== 'firebase') return function(){};
+      var fs = fb.fs;
+      var active = true;
+      var states = new Map();
+      onStatus('connecting');
+
+      function updateStatus(time, state) {
+        states.set(time, state);
+        var values = Array.from(states.values());
+        if(values.includes('error')) onStatus('error');
+        else if(values.includes('cached')) onStatus('cached');
+        else onStatus(values.length === times.length ? 'live' : 'connecting');
       }
+
+      // Watch the same individual documents as getSlot, so the listener
+      // uses the existing document read permissions without a collection query.
+      var stops = times.map(function(time){
+        var ref = fs.doc(fb.db, COL_SLOTS, slotDocId(dateStr, dirKey, time));
+        return fs.onSnapshot(ref, { includeMetadataChanges: true }, function(snap){
+          if(!active) return;
+          var cached = snap.metadata.fromCache;
+          updateStatus(time, cached ? 'cached' : 'live');
+          if(!cached) onSlot(time, slotFromSnapshot(snap, dateStr, dirKey, time));
+        }, function(err){
+          if(!active) return;
+          console.error(err);
+          updateStatus(time, 'error');
+        });
+      });
+      return function(){
+        active = false;
+        stops.forEach(function(stop){ stop(); });
+      };
     }
 
     async function listSlots(dateStr, dirKey, legacy) {
       var times = (legacy ? LEGACY_DIRS : DIRS)[dirKey].baseTimes;
-      var slots = [];
-      for(var i=0;i<times.length;i++) {
-        var time = times[i];
-        var slot = await getSlot(dateStr, dirKey, time);
-        if(legacy && !Object.keys(slot.bookings || {}).length) continue;
-        slots.push({ time: time, capacity: slot.capacity, available: slot.available });
-      }
-      return slots;
+      var slots = await Promise.all(times.map(function(time){
+        return getSlot(dateStr, dirKey, time).then(function(slot){
+          return Object.assign({}, slot, { time: time });
+        });
+      }));
+      return legacy ? slots.filter(function(slot){ return Object.keys(slot.bookings).length; }) : slots;
     }
 
     async function book(dateStr, dirKey, timeStr, roomRaw, pax, placeKey, timesInfo) {
@@ -797,11 +815,6 @@ tx.set(logRef, {
         return { ok:true };
       } catch(e) {
         console.error(e);
-        if(isQuotaError(e)) {
-          mode = 'local';
-          toast('Quota Firebase เต็ม', 'สลับเป็น Local ชั่วคราว');
-          return book(dateStr, dirKey, timeStr, roomRaw, pax, placeKey, timesInfo);
-        }
         return { ok:false, msg: (e && e.message) ? e.message : 'จองไม่สำเร็จ' };
       }
     }
@@ -953,11 +966,6 @@ tx.set(logRef, {
         return { ok:true };
       } catch(e) {
         console.error(e);
-        if(isQuotaError(e)) {
-          mode = 'local';
-          toast('Quota Firebase เต็ม', 'สลับเป็น Local ชั่วคราว');
-          return cancel(dateStr, dirKey, timeStr, roomRaw, pax);
-        }
         return { ok:false, msg: (e && e.message) ? e.message : 'ยกเลิกไม่สำเร็จ' };
       }
     }
@@ -1010,7 +1018,6 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         return normalizeStatsDoc(data);
 } catch(e) {
         console.error(e);
-        if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return getStatsMonth(monthKey); }
         return { out:{}, back:{}, meta:{} };
       }
     }
@@ -1144,7 +1151,6 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         return out.slice(0, limitN);
       } catch(e) {
         console.error(e);
-        if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return queryLogs(opts); }
         return [];
       }
     }
@@ -1178,7 +1184,6 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         return true;
       } catch(e) {
         console.error(e);
-        if(isQuotaError(e)) { mode='local'; toast('Quota Firebase เต็ม','สลับเป็น Local ชั่วคราว'); return resetDay(dateStr); }
         return false;
       }
     }
@@ -1189,6 +1194,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       getInitError: getInitError,
       getSlot: getSlot,
       listSlots: listSlots,
+      watchSlots: watchSlots,
       book: book,
       cancel: cancel,
       getStatsMonth: getStatsMonth,
@@ -1679,23 +1685,32 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   }
   // Views
   // ============================
-  function setStatusLine() {
+  var viewVersion = 0;
+  var stopWatching = function(){};
+
+  function setStatusLine(state) {
     var el = document.getElementById('statusLine');
     if(!el) return;
     var mode = storage.getMode();
     var err = (storage.getInitError ? storage.getInitError() : null);
 
     if(err && mode !== 'firebase') {
-      el.textContent = 'Firebase state error (ใช้ Local แทน)';
+      el.textContent = 'Local: เชื่อม Firebase ไม่ได้ ข้อมูลเก็บเฉพาะเบราว์เซอร์นี้';
       return;
     }
     if(mode === 'firebase') {
-      el.textContent = 'Realtime: ข้อมูลที่นั่ง + Log อยู่บน Firebase (Export เป็น Excel ได้)';
+      var messages = {
+        connecting: 'Firebase: กำลังเชื่อมการอัปเดตที่นั่ง',
+        live: 'Firebase Live: ที่นั่งและรายการจองอัปเดตอัตโนมัติ',
+        cached: 'Firebase: กำลังรอข้อมูลล่าสุด ยอดที่นั่งอาจยังไม่อัปเดต',
+        error: 'Firebase: การอัปเดตสดขัดข้อง โหลดหน้าใหม่เพื่อลองอีกครั้ง'
+      };
+      el.textContent = messages[state] || 'Firebase: ข้อมูลแชร์ระหว่างเครื่อง';
       return;
     }
     el.textContent = 'Local: ข้อมูลที่นั่ง + Log อยู่ในเครื่องนี้ (Export เป็น Excel ได้)';
   }
-  async function viewSchedule() {
+  async function viewSchedule(version) {
     renderNav('/');
     setStatusLine();
 
@@ -1707,11 +1722,9 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
 
     var legacy = parseHash().path === '/legacy';
     var slots = await storage.listSlots(date, dirKey, legacy);
-    mode = storage.getMode();
-    setStatusLine();
-
     // Stats (monthly, based on BOOK total pax)
     var statsMonth = await storage.getStatsMonth(monthKey);
+    if(version !== viewVersion) return;
     var meta = (statsMonth && statsMonth.meta) ? statsMonth.meta : {};
     var perObj = (statsMonth && statsMonth[dirKey]) ? statsMonth[dirKey] : {};
 
@@ -1736,7 +1749,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       '</div>';
     }).join('');
 
-    var cardsHtml = slots.map(function(s){
+    function cardHtml(s) {
       var closed = isSlotPast(date, s.time);
       var isFull = (s.available === 0);
       // ✅ Past time: show grey style only (still clickable)
@@ -1753,7 +1766,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
         '</div>' +
         '<button class="btn ' + btnKind + '" onclick="window.__openBooking(\''+dirKey+'\',\''+s.time+'\')">' + btnLabel + '</button>' +
       '</div>';
-    }).join('');
+    }
 
     var dirLabel = (dirKey === 'back') ? 'ขากลับ' : 'ขาไป';
     var monthLogsVal = (meta.logs!==undefined && meta.logs!==null) ? meta.logs : meta.monthLogs;
@@ -1804,13 +1817,32 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
               '<button class="chip ' + (dirKey==='back'?'active':'') + '" onclick="window.__setDir(\'back\')">ขากลับ</button>' +
             '</div>' +
           '</div>' +
-          '<div class="card-b"><div class="slots">' + (cardsHtml || '<div class="mini">ไม่มีรายการจองเดิมในวันที่เลือก</div>') + '</div>' +
+           '<div class="card-b"><div class="slots" id="scheduleSlots">' + (slots.map(cardHtml).join('') || '<div class="mini">ไม่มีรายการจองเดิมในวันที่เลือก</div>') + '</div>' +
             '<div class="mini"><a class="chip" href="' + (legacy ? '#/' : '#/legacy') + '">' +
               (legacy ? 'กลับตารางใหม่' : 'ดูรายการจองจากตารางเดิม') + '</a></div>' +
           '</div>' +
         '</section>' +
         right +
       '</div>';
+
+    var scheduleSlots = $('scheduleSlots');
+    var shownSlots = new Map(slots.map(function(slot){ return [slot.time, slot]; }));
+    stopWatching = storage.watchSlots(date, dirKey, baseTimes, function(time, slot){
+      if(version !== viewVersion) return;
+      var previous = shownSlots.get(time);
+      if(legacy && !Object.keys(slot.bookings).length) {
+        if(!previous) return;
+        shownSlots.delete(time);
+      } else {
+        if(previous && previous.available === slot.available && previous.capacity === slot.capacity) return;
+        shownSlots.set(time, Object.assign({}, slot, { time: time }));
+      }
+      var current = baseTimes.filter(function(key){ return shownSlots.has(key); });
+      scheduleSlots.innerHTML = current.map(function(key){ return cardHtml(shownSlots.get(key)); }).join('')
+        || '<div class="mini">ไม่มีรายการจองเดิมในวันที่เลือก</div>';
+    }, function(state){
+      if(version === viewVersion) setStatusLine(state);
+    });
 
     var dp = $('datePick');
     if(dp) {
@@ -1846,13 +1878,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       storage.resetDay(date).then(function(ok){
         if(ok) toast('รีเซ็ตที่นั่งแล้ว', 'วันที่ ' + date);
         else toast('รีเซ็ตไม่สำเร็จ', 'ตรวจสอบ Firebase/Quota');
-        render().catch(console.error);
+        if(version === viewVersion) render().catch(console.error);
       });
     };
   }
 
 
-  async function viewBooking(dateStr, dirKey, baseTime) {
+  async function viewBooking(dateStr, dirKey, baseTime, version) {
     renderNav('/');
     setStatusLine();
     var ui = loadUi();
@@ -1868,6 +1900,9 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var closed = isSlotPast(date, baseTime);
 
     var slot = await storage.getSlot(date, dir.key, baseTime);
+    if(version !== viewVersion) return;
+    var revision = 0;
+    var pending = false;
 
     var options = dir.selectable.map(function(p){
       return '<option value="' + escapeHtml(p.key) + '">' + escapeHtml(p.name) + '</option>';
@@ -1989,6 +2024,10 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     }
 
     function updateBookBtn(slotData) {
+      if(pending) {
+        bookBtn.disabled = true;
+        return;
+      }
       if(legacy) {
         bookBtn.disabled = true;
         noteEl.textContent = 'รอบเดิมเปิดให้ดูหรือยกเลิกเท่านั้น';
@@ -2029,21 +2068,31 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       }
     }
 
-    async function refresh() {
-      var sl = await storage.getSlot(date, dir.key, baseTime);
-      updateArrival();
-      updateMini(sl);
-      updateBookBtn(sl);
-      renderBookings(sl);
-      return sl;
+    function showSlot(next) {
+      slot = next;
+      updateMini(slot);
+      updateBookBtn(slot);
+      renderBookings(slot);
     }
 
-    placeEl.addEventListener('change', function(){ updateArrival(); });
-    roomEl.addEventListener('input', function(){ refresh().catch(console.error); });
+    async function refresh() {
+      var before = revision;
+      try {
+        var next = await storage.getSlot(date, dir.key, baseTime);
+        if(version === viewVersion && before === revision) showSlot(next);
+      } catch(err) {
+        console.error(err);
+        if(version === viewVersion) setStatusLine('error');
+      }
+    }
+
+    placeEl.addEventListener('change', updateArrival);
+    roomEl.addEventListener('input', function(){ updateBookBtn(slot); });
 
     window.__back = function(){ setHash(legacy ? '/legacy' : '/'); };
 
     window.__book = async function(){
+      if(pending || version !== viewVersion) return;
       var placeKey = String(placeEl.value||'').trim();
       var room = String(roomEl.value||'').trim();
       var pax = parseInt(paxEl.value,10);
@@ -2053,28 +2102,50 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var t = calcTimes(dir.key, baseTime, placeKey);
       if(!t) { toast('ข้อมูลไม่ถูกต้อง','ไม่สามารถคำนวณเวลาได้'); return; }
 
-      bookBtn.disabled = true;
-      var res = await storage.book(date, dir.key, baseTime, room, pax, placeKey, t);
-      if(!res.ok) { toast('จองไม่สำเร็จ', res.msg||''); await refresh(); return; }
-      toast('จองสำเร็จ', dir.label + ' • ห้อง ' + room + ' • ' + pax + ' คน • ขึ้นรถ ' + t.pickupTime);
-      await refresh();
+      pending = true;
+      updateBookBtn(slot);
+      try {
+        var res = await storage.book(date, dir.key, baseTime, room, pax, placeKey, t);
+        if(!res.ok) toast('จองไม่สำเร็จ', res.msg || '');
+        else toast('จองสำเร็จ', dir.label + ' • ห้อง ' + room + ' • ' + pax + ' คน • ขึ้นรถ ' + t.pickupTime);
+        if(version === viewVersion) await refresh();
+      } finally {
+        pending = false;
+        if(version === viewVersion) updateBookBtn(slot);
+      }
     };
 
     window.__cancel = async function(){
+      if(pending || version !== viewVersion) return;
       var room = String(roomEl.value||'').trim();
       var pax = parseInt(paxEl.value,10);
       if(!room) { toast('ข้อมูลไม่ครบ','กรุณาใส่เลขห้อง'); return; }
       if(!Number.isFinite(pax) || pax<=0) { toast('ข้อมูลไม่ครบ','กรุณาใส่จำนวนคน'); return; }
-      var res = await storage.cancel(date, dir.key, baseTime, room, pax);
-      if(!res.ok) { toast('ยกเลิกไม่สำเร็จ', res.msg||''); await refresh(); return; }
-      toast('ยกเลิกสำเร็จ', 'คืนที่นั่ง ' + pax + ' คน • ห้อง ' + room);
-      await refresh();
+      pending = true;
+      updateBookBtn(slot);
+      try {
+        var res = await storage.cancel(date, dir.key, baseTime, room, pax);
+        if(!res.ok) toast('ยกเลิกไม่สำเร็จ', res.msg || '');
+        else toast('ยกเลิกสำเร็จ', 'คืนที่นั่ง ' + pax + ' คน • ห้อง ' + room);
+        if(version === viewVersion) await refresh();
+      } finally {
+        pending = false;
+        if(version === viewVersion) updateBookBtn(slot);
+      }
     };
 
-    await refresh();
+    updateArrival();
+    showSlot(slot);
+    stopWatching = storage.watchSlots(date, dir.key, [baseTime], function(time, next){
+      if(version !== viewVersion) return;
+      revision++;
+      showSlot(next);
+    }, function(state){
+      if(version === viewVersion) setStatusLine(state);
+    });
   }
 
-  async function viewLogs() {
+  async function viewLogs(version) {
     renderNav('/logs');
     setStatusLine();
     var date = (loadUi().date || todayKey());
@@ -2094,6 +2165,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     backTimes.forEach(function(t){ var v = val('back',t); if(v>backTop.value) backTop={time:roundLabel(t),value:v}; });
 
     var recent = await storage.queryLogs({ mode:'all', limit: 250 });
+    if(version !== viewVersion) return;
 
     function buildBars(map, times) {
       map = map || {};
@@ -2193,8 +2265,24 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   // Router
   // ============================
   async function render() {
+    var version = ++viewVersion;
+    stopWatching();
+    stopWatching = function(){};
+    $('view').innerHTML = '<div class="mini">กำลังโหลดข้อมูล</div>';
+    try {
+      await renderPage(version);
+    } catch(err) {
+      console.error(err);
+      if(version !== viewVersion) return;
+      setStatusLine('error');
+      $('view').innerHTML = '<div class="mini">โหลดข้อมูลไม่สำเร็จ <button id="retryView" class="btn ghost">ลองอีกครั้ง</button></div>';
+      $('retryView').addEventListener('click', render);
+    }
+  }
+
+  function renderPage(version) {
     var h = parseHash();
-    if(h.path === '/logs') return viewLogs();
+    if(h.path === '/logs') return viewLogs(version);
     if(h.path === '/book') {
       var d = h.params.get('date') || (loadUi().date || todayKey());
       if(d && /^\d{4}-\d{2}-\d{2}$/.test(d)) {
@@ -2206,9 +2294,9 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       }
       var dir = h.params.get('dir') || 'out';
       var t = h.params.get('time') || '';
-      return viewBooking(d, dir==='back'?'back':'out', t);
+      return viewBooking(d, dir==='back'?'back':'out', t, version);
     }
-    return viewSchedule();
+    return viewSchedule(version);
   }
 
   // ============================
