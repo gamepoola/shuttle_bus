@@ -355,6 +355,14 @@
       back: ['12:30', '15:30', '17:30']
     }
   };
+  var STOPS = new Map();
+  Object.keys(ROUTES).forEach(function(routeKey){
+    ROUTES[routeKey].stops.forEach(function(stop){
+      STOPS.set(stop.key, Object.assign({ routeKey: routeKey }, stop));
+    });
+  });
+  var DEFAULT_STOP = 'BANANA';
+
   var DIRS = {};
   Object.keys(LEGACY_DIRS).forEach(function(dirKey){
     var roundKeys = [];
@@ -713,8 +721,8 @@
       };
     }
 
-    async function listSlots(dateStr, dirKey, legacy) {
-      var times = (legacy ? LEGACY_DIRS : DIRS)[dirKey].baseTimes;
+    async function listSlots(dateStr, dirKey, legacy, times) {
+      times = times || (legacy ? LEGACY_DIRS : DIRS)[dirKey].baseTimes;
       var slots = await Promise.all(times.map(function(time){
         return getSlot(dateStr, dirKey, time).then(function(slot){
           return Object.assign({}, slot, { time: time });
@@ -1228,12 +1236,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     try {
       var raw = localStorage.getItem(LS_UI);
       var today = todayKey();
-      if(!raw) return { dir:'out', date: today };
+      if(!raw) return { dir:'out', date: today, stop: DEFAULT_STOP };
       var p = JSON.parse(raw);
       var dir = (p && p.dir === 'back') ? 'back' : 'out';
       var date = (p && typeof p.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.date)) ? p.date : today;
-      return { dir: dir, date: date };
-    } catch(e) { return { dir:'out', date: todayKey() }; }
+      var stop = (p && STOPS.has(p.stop)) ? p.stop : DEFAULT_STOP;
+      return { dir: dir, date: date, stop: stop };
+    } catch(e) { return { dir:'out', date: todayKey(), stop: DEFAULT_STOP }; }
   }
   function saveUi(ui) { localStorage.setItem(LS_UI, JSON.stringify(ui)); }
 
@@ -1721,21 +1730,29 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var monthKey = monthKeyFromDateStr(date);
 
     var legacy = parseHash().path === '/legacy';
-    var slots = await storage.listSlots(date, dirKey, legacy);
+    var selected = STOPS.get(ui.stop);
+    var baseTimes = legacy ? LEGACY_DIRS[dirKey].baseTimes : DIRS[dirKey].baseTimes.filter(function(time){
+      return roundRoute(time) === ROUTES[selected.routeKey];
+    });
+    var sharedRoute = !legacy && ROUTES[selected.routeKey].stops.length > 1;
+    var slots = await storage.listSlots(date, dirKey, legacy, baseTimes);
+
+    function pickupTime(time) {
+      return legacy ? roundTime(time) : calcTimes(dirKey, time, selected.key).pickupTime;
+    }
     // Stats (monthly, based on BOOK total pax)
     var statsMonth = await storage.getStatsMonth(monthKey);
     if(version !== viewVersion) return;
     var meta = (statsMonth && statsMonth.meta) ? statsMonth.meta : {};
     var perObj = (statsMonth && statsMonth[dirKey]) ? statsMonth[dirKey] : {};
 
-    var baseTimes = (legacy ? LEGACY_DIRS : DIRS)[dirKey].baseTimes;
     var topTime = '—';
     var topValue = 0;
     var vals = [];
     baseTimes.forEach(function(t){
       var v = Number(perObj[timeKey(t)] || 0);
       vals.push(v);
-      if(v > topValue) { topValue = v; topTime = roundLabel(t); }
+      if(v > topValue) { topValue = v; topTime = pickupTime(t); }
     });
     var maxVal = Math.max.apply(null, vals.concat([0]));
 
@@ -1743,14 +1760,15 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var v = Number(perObj[timeKey(t)] || 0);
       var w = maxVal ? Math.round((v/maxVal)*100) : 0;
       return '<div class="bar">' +
-        '<div class="lbl">' + escapeHtml(roundLabel(t)) + '</div>' +
+        '<div class="lbl">' + escapeHtml(pickupTime(t)) + '</div>' +
         '<div class="track"><div class="fill" style="width:' + w + '%"></div></div>' +
         '<div class="num">' + v + '</div>' +
       '</div>';
     }).join('');
 
     function cardHtml(s) {
-      var closed = isSlotPast(date, s.time);
+      var pickup = pickupTime(s.time);
+      var closed = isSlotPast(date, pickup);
       var isFull = (s.available === 0);
       // ✅ Past time: show grey style only (still clickable)
       var btnLabel = (isFull || legacy) ? 'ดู' : 'เลือก';
@@ -1758,9 +1776,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       var availClass = isFull ? 'danger' : '';
       return '<div class="slot">' +
         '<div class="meta">' +
-          '<div class="time">' + escapeHtml(roundTime(s.time)) + '</div>' +
-          '<div class="seat">' + escapeHtml(roundRoute(s.time) ? roundRoute(s.time).label : 'รอบเดิม') + '</div>' +
-          (dirKey === 'back' && s.time.endsWith('_boat') ? '<div class="seat">รับที่ Le Phang Beach ' + addMin(roundTime(s.time), 15) + '</div>' : '') +
+          '<div class="time">' + escapeHtml(pickup) + '</div>' +
           '<div class="seat">ที่นั่งว่าง: <b class="' + availClass + '">' + s.available + '</b> / ' + s.capacity + '</div>' +
           (closed ? '<div style="color: rgba(245,240,230,.55)">• ปิดทำรายการ</div>' : '') +
         '</div>' +
@@ -1778,7 +1794,8 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     right += '<section class="card">';
     right += '<div class="card-h">' +
       '<div><h2>สถิติจาก Log</h2>' +
-      '<p class="hint">โหมด: <b>' + dirLabel + '</b> • เดือน <b>' + monthKey + '</b> (ยอด BOOK รวม)</p></div>' +
+      '<p class="hint">' + escapeHtml(dirLabel) + (legacy ? ' · ตารางเดิม' : ' · ' + escapeHtml(sharedRoute ? ROUTES[selected.routeKey].label : selected.name)) +
+      ' · เดือน <b>' + escapeHtml(monthKey) + '</b> (ยอดจองรวม)</p></div>' +
     '</div>';
     right += '<div class="card-b">';
     right += '<div class="kpi">' +
@@ -1803,13 +1820,26 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     }
     right += '</div></section>';
 
+    var stopPicker = '';
+    if(!legacy) {
+      var stopOptions = Array.from(STOPS.values()).map(function(stop){
+        return '<option value="' + escapeHtml(stop.key) + '"' + (stop.key === selected.key ? ' selected' : '') +
+          '>' + escapeHtml(stop.name) + '</option>';
+      }).join('');
+      stopPicker = '<div class="field" style="max-width:340px;margin-bottom:12px">' +
+        '<label for="stopPick">' + (dirKey === 'back' ? 'จุดรับขากลับ' : 'ปลายทาง') + '</label>' +
+        '<select id="stopPick">' + stopOptions + '</select>' +
+        (sharedRoute ? '<div class="mini">Boat Avenue และ Le Phang Beach ใช้ที่นั่งร่วมกันในรอบเดียว</div>' : '') +
+      '</div>';
+    }
+
     $('view').innerHTML =
       '<div class="grid">' +
         '<section class="card">' +
           '<div class="card-h">' +
             (legacy
               ? '<div><h2>รายการจองตามตารางเดิม</h2><p class="hint">เลือกวันที่และรอบเพื่อดูหรือยกเลิกรายการจองเดิม</p></div>'
-              : '<div><h2>ตารางเวลาเดินรถ</h2><p class="hint">เลือก <b>ขาไป/ขากลับ</b> แล้วเลือกรอบตามเส้นทาง</p></div>') +
+              : '<div><h2>ตารางเวลาเดินรถ</h2><p class="hint">เลือก <b>ขาไป/ขากลับ</b> และสถานที่ เพื่อดูเฉพาะรอบของจุดนั้น</p></div>') +
             '<div class="row">' +
               '<div class="field" style="width:190px;max-width:190px"><label for="datePick">วันที่เดินรถ</label><input id="datePick" type="date" value="'+escapeHtml(date)+'" min="'+escapeHtml(todayKey())+'" /></div>' +
               '<span class="pill"><span class="dot"></span> ' + (mode==='firebase' ? 'Firebase' : 'Local') + '</span>' +
@@ -1817,7 +1847,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
               '<button class="chip ' + (dirKey==='back'?'active':'') + '" onclick="window.__setDir(\'back\')">ขากลับ</button>' +
             '</div>' +
           '</div>' +
-           '<div class="card-b"><div class="slots" id="scheduleSlots">' + (slots.map(cardHtml).join('') || '<div class="mini">ไม่มีรายการจองเดิมในวันที่เลือก</div>') + '</div>' +
+          '<div class="card-b">' + stopPicker + '<div class="slots" id="scheduleSlots">' + (slots.map(cardHtml).join('') || '<div class="mini">ไม่มีรายการจองเดิมในวันที่เลือก</div>') + '</div>' +
             '<div class="mini"><a class="chip" href="' + (legacy ? '#/' : '#/legacy') + '">' +
               (legacy ? 'กลับตารางใหม่' : 'ดูรายการจองจากตารางเดิม') + '</a></div>' +
           '</div>' +
@@ -1858,6 +1888,17 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       });
     }
 
+    if(!legacy) {
+      var stopPick = $('stopPick');
+      stopPick.addEventListener('change', function(){
+        if(!STOPS.has(stopPick.value)) return;
+        var ui2 = loadUi();
+        ui2.stop = stopPick.value;
+        saveUi(ui2);
+        render().catch(console.error);
+      });
+    }
+
     window.__setDir = function(d){
       var ui2 = loadUi();
       ui2.dir = (d==='back') ? 'back' : 'out';
@@ -1866,7 +1907,8 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     };
 
     window.__openBooking = function(d, t){
-      setHash('/book?date=' + encodeURIComponent(date) + '&dir=' + encodeURIComponent(d) + '&time=' + encodeURIComponent(t));
+      setHash('/book?date=' + encodeURIComponent(date) + '&dir=' + encodeURIComponent(d) +
+        '&time=' + encodeURIComponent(t) + (legacy ? '' : '&stop=' + encodeURIComponent(selected.key)));
     };
 
     window.__exportDay = function(){ doExport('day', date).catch(console.error); };
@@ -1884,7 +1926,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
   }
 
 
-  async function viewBooking(dateStr, dirKey, baseTime, version) {
+  async function viewBooking(dateStr, dirKey, baseTime, stopKey, version) {
     renderNav('/');
     setStatusLine();
     var ui = loadUi();
@@ -1897,7 +1939,10 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     }
     var route = roundRoute(baseTime);
     var dir = Object.assign({}, legacyDir, { selectable: legacy ? legacyDir.selectable : route.stops });
-    var closed = isSlotPast(date, baseTime);
+    var selected = route && route.stops.find(function(stop){ return stop.key === stopKey; });
+    if(!selected && route && route.stops.length === 1) selected = route.stops[0];
+    var boarding = selected ? calcTimes(dirKey, baseTime, selected.key) : null;
+    var heading = selected ? boarding.pickupTime + ' · ' + selected.name : roundLabel(baseTime);
 
     var slot = await storage.getSlot(date, dir.key, baseTime);
     if(version !== viewVersion) return;
@@ -1911,15 +1956,17 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     $('view').innerHTML =
       '<section class="card">' +
         '<div class="card-h">' +
-          '<div><h2>' + escapeHtml(dir.label) + ' • วันที่ <span style="color:var(--gold2)">' + escapeHtml(date) + '</span> • รอบเวลา <span style="color:var(--gold2)">' + escapeHtml(roundLabel(baseTime)) + '</span></h2>' +
-          '<p class="hint">' + (legacy ? 'ดูหรือยกเลิกรายการจองเดิม' : 'เลือก ' + escapeHtml(dir.selectLabel) + ' เพื่อดูเวลาขึ้นรถ') + '</p></div>' +
+          '<div><h2>' + escapeHtml(dir.label) + ' • วันที่ <span style="color:var(--gold2)">' + escapeHtml(date) + '</span> • รอบเวลา <span style="color:var(--gold2)">' + escapeHtml(heading) + '</span></h2>' +
+          '<p class="hint">' + (legacy ? 'ดูหรือยกเลิกรายการจองเดิม' : (selected ? 'กรอกเลขห้องและจำนวนผู้โดยสาร' : 'เลือก ' + escapeHtml(dir.selectLabel) + ' เพื่อดูเวลาขึ้นรถ')) + '</p></div>' +
           '<div class="row"><button class="btn ghost" onclick="window.__back()">ย้อนกลับ</button></div>' +
         '</div>' +
         '<div class="card-b" style="max-width: 860px;">' +
           '<div class="row" style="gap:12px">' +
             '<div class="field" style="flex:1 1 360px">' +
               '<label for="place">' + escapeHtml(dir.selectLabel) + '</label>' +
-              '<select id="place"><option value="">— โปรดเลือก —</option>' + options + '</select>' +
+              (selected
+                ? '<input id="place" readonly value="' + escapeHtml(selected.name) + '" />'
+                : '<select id="place"><option value="">— โปรดเลือก —</option>' + options + '</select>') +
             '</div>' +
             '<div class="field" style="flex:1 1 260px">' +
               '<label>' + (legacy ? 'เวลาถึงโดยประมาณ' : 'เวลาขึ้นรถ') + '</label>' +
@@ -1957,14 +2004,13 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
     var placeEl = $('place');
     var arrivalEl = $('arrival');
     var routeNoteEl = $('routeNote');
-    if(route && route.stops.length === 1) placeEl.value = route.stops[0].key;
     var roomEl = $('room');
     var paxEl = $('pax');
     var bookBtn = $('btnBook');
     var noteEl = $('note');
 
     function updateArrival() {
-      var t = calcTimes(dir.key, baseTime, placeEl.value);
+      var t = boarding || calcTimes(dir.key, baseTime, placeEl.value);
       if(!t) {
         arrivalEl.value = '—';
         routeNoteEl.textContent = 'เลือก ' + dir.selectLabel + ' เพื่อคำนวณเวลา';
@@ -2019,7 +2065,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
 
     function updateMini(slotData) {
       var sl = slotData;
-      var closedNow = isSlotPast(date, baseTime);
+      var closedNow = isSlotPast(date, arrivalEl.value === '—' || !route ? baseTime : arrivalEl.value);
       $('mini').innerHTML = '<b>คงเหลือ:</b> ที่นั่งว่าง <b class="' + (sl.available===0?'danger':'') + '">' + sl.available + '</b> / ' + sl.capacity + (closedNow ? ' • <span style="color: rgba(245,240,230,.55)"><b>ปิดทำรายการแล้ว</b></span>' : '') + '<br/><span style="color:var(--muted)">Tip: หากต้องการเปลี่ยนจำนวนหรือเปลี่ยนจุด ให้ยกเลิกจนเหลือ 0 แล้วจองใหม่</span>';
     }
 
@@ -2086,14 +2132,17 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       }
     }
 
-    placeEl.addEventListener('change', updateArrival);
+    if(!selected) placeEl.addEventListener('change', function(){
+      updateArrival();
+      updateMini(slot);
+    });
     roomEl.addEventListener('input', function(){ updateBookBtn(slot); });
 
     window.__back = function(){ setHash(legacy ? '/legacy' : '/'); };
 
     window.__book = async function(){
       if(pending || version !== viewVersion) return;
-      var placeKey = String(placeEl.value||'').trim();
+      var placeKey = selected ? selected.key : String(placeEl.value||'').trim();
       var room = String(roomEl.value||'').trim();
       var pax = parseInt(paxEl.value,10);
       if(!placeKey) { toast('ข้อมูลไม่ครบ','กรุณาเลือก ' + dir.selectLabel); return; }
@@ -2294,7 +2343,7 @@ if(!snap.exists()) return { out:{}, back:{}, meta:{} };
       }
       var dir = h.params.get('dir') || 'out';
       var t = h.params.get('time') || '';
-      return viewBooking(d, dir==='back'?'back':'out', t, version);
+      return viewBooking(d, dir==='back'?'back':'out', t, h.params.get('stop'), version);
     }
     return viewSchedule(version);
   }
