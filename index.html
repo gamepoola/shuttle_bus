@@ -252,14 +252,17 @@
     }
   };
 
-  // Each route and direction has its own seat pool. The Boat Avenue
-  // and Le Phang Beach stops share seats on the same vehicle.
+  // Existing trips are retained; additional trips from the Radisson Shuttle
+  // Service notice (18 Nov 2026) are merged into the same route schedules.
+  // Each route and direction has its own seat pool. Boat Avenue and
+  // Le Phang Beach continue to share seats on the same vehicle.
+  // Banana Beach 11:00 outbound has NO corresponding 11:30 return.
   var ROUTES = {
     banana: {
       label: 'Banana Beach',
       stops: [{ key: 'BANANA', name: 'Banana Beach', returnOffset: 0 }],
-      out: ['11:00', '14:00', '18:00'],
-      back: ['14:30', '18:30']
+      out: ['11:00', '13:00', '14:00', '15:00', '17:00', '18:00'],
+      back: ['13:30', '14:30', '15:30', '17:30', '18:30']
     },
     layan: {
       label: 'Layan Beach',
@@ -273,8 +276,8 @@
         { key: 'BOAT', name: 'Boat Avenue', returnOffset: 0 },
         { key: 'LEPHANG', name: 'Le Phang Beach', returnOffset: 15 }
       ],
-      out: ['12:00', '15:00', '17:00'],
-      back: ['12:30', '15:30', '17:30']
+      out: ['10:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00'],
+      back: ['10:30', '12:30', '14:30', '15:30', '16:30', '17:30', '18:30']
     }
   };
   var STOPS = new Map();
